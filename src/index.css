@@ -1,0 +1,197 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Merriweather:wght@700;900&display=swap");
+@import "tailwindcss";
+
+/* Bảng màu lấy từ VNR202: nền kem sữa + đỏ đậm, điểm vàng */
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Merriweather", Georgia, serif;
+
+  --color-cream: #faf7f0;
+  --color-cream-dark: #f1e9d8;
+  --color-card: #ffffff;
+
+  --color-primary: #a91e22;
+  --color-primary-dark: #7a1418;
+  --color-primary-soft: #f6e2c8;
+  --color-gold: #d4a72c;
+
+  --color-ink: #201c1a;
+  --color-ink-soft: #514a3f;
+  --color-ink-muted: #8a7f6a;
+  --color-line: #e4ddc9;
+
+  --radius-card: 16px;
+  --page-max: 90rem; /* bề rộng nội dung; dải rail của nền trang chủ lấy cùng giá trị */
+  --shadow-primary: 0 4px 14px 0 rgba(169, 30, 34, 0.28);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =========================
+   Nền động trang chủ (AmbientBackground)
+   Mây là khối màu bán trong suốt, chỉ animate transform. Cố ý không dùng mix-blend-mode:
+   nó buộc trình duyệt trộn lại mây với nền ở mỗi khung hình nên đắt hơn hẳn.
+========================= */
+.mc-ambient {
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-cream) 90%, var(--color-primary)) 0%,
+    color-mix(in oklab, var(--color-cream) 86%, var(--color-gold)) 55%,
+    color-mix(in oklab, var(--color-cream) 90%, var(--color-primary)) 100%
+  );
+}
+
+.mc-cloud {
+  position: absolute;
+  display: block;
+  will-change: transform;
+}
+
+.mc-cloud-1 {
+  top: -14rem;
+  left: -10rem;
+  width: 42rem;
+  height: 34rem;
+  background: color-mix(in oklab, var(--color-primary) 24%, transparent);
+  border-radius: 58% 42% 47% 53% / 52% 46% 54% 48%;
+  animation: mc-cloud-a 64s linear infinite;
+}
+
+.mc-cloud-2 {
+  top: 6%;
+  right: -16rem;
+  width: 38rem;
+  height: 38rem;
+  background: color-mix(in oklab, var(--color-gold) 30%, transparent);
+  border-radius: 44% 56% 63% 37% / 46% 58% 42% 54%;
+  animation: mc-cloud-b 82s linear infinite;
+}
+
+.mc-cloud-3 {
+  top: 34%;
+  left: 12%;
+  width: 30rem;
+  height: 22rem;
+  background: color-mix(in oklab, var(--color-primary) 18%, transparent);
+  border-radius: 62% 38% 41% 59% / 55% 43% 57% 45%;
+  animation: mc-cloud-c 71s linear infinite;
+}
+
+.mc-cloud-4 {
+  bottom: -12rem;
+  left: 30%;
+  width: 34rem;
+  height: 28rem;
+  background: color-mix(in oklab, #c9602a 22%, transparent);
+  border-radius: 49% 51% 58% 42% / 61% 39% 61% 39%;
+  animation: mc-cloud-d 93s linear infinite;
+}
+
+.mc-cloud-5 {
+  top: 52%;
+  right: 6%;
+  width: 24rem;
+  height: 20rem;
+  background: color-mix(in oklab, var(--color-gold) 26%, transparent);
+  border-radius: 53% 47% 36% 64% / 42% 57% 43% 58%;
+  animation: mc-cloud-e 57s linear infinite;
+}
+
+.mc-cloud-6 {
+  top: -6rem;
+  left: 42%;
+  width: 26rem;
+  height: 24rem;
+  background: color-mix(in oklab, var(--color-primary-dark) 14%, transparent);
+  border-radius: 40% 60% 55% 45% / 50% 50% 50% 50%;
+  animation: mc-cloud-f 76s linear infinite;
+}
+
+/* Xoay chậm làm mép mảng mây đổi hình dáng */
+@keyframes mc-cloud-a {
+  50% { transform: translate3d(8rem, 4rem, 0) rotate(180deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(360deg); }
+}
+@keyframes mc-cloud-b {
+  50% { transform: translate3d(-9rem, 6rem, 0) rotate(-180deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(-360deg); }
+}
+@keyframes mc-cloud-c {
+  50% { transform: translate3d(12rem, -5rem, 0) rotate(200deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(360deg); }
+}
+@keyframes mc-cloud-d {
+  50% { transform: translate3d(-10rem, -7rem, 0) rotate(-160deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(-360deg); }
+}
+@keyframes mc-cloud-e {
+  50% { transform: translate3d(-7rem, -9rem, 0) rotate(180deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(360deg); }
+}
+@keyframes mc-cloud-f {
+  50% { transform: translate3d(6rem, 9rem, 0) rotate(-180deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(-360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-cloud {
+    animation: none;
+  }
+}
+
+/* Dải nội dung ở giữa, hai viền dọc (rail) trùng mép Container */
+.mc-rail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+}
+
+/* Kính mờ: đẹp nhất nhưng đắt, vì mây phía sau luôn chuyển động nên vùng này phải blur lại mỗi khung hình.
+   Muốn rẻ hơn thì đổi RAIL_SURFACE sang "tint" trong AmbientBackground.tsx. */
+.mc-rail-blur {
+  backdrop-filter: blur(12px) saturate(1.1);
+  background: color-mix(in oklab, color-mix(in oklab, var(--color-cream) 80%, var(--color-primary)) 12%, transparent);
+}
+
+/* Đục màu, không blur */
+.mc-rail-tint {
+  background: color-mix(in oklab, color-mix(in oklab, var(--color-cream) 80%, var(--color-primary)) 48%, transparent);
+}
+
+.mc-rail::before,
+.mc-rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--color-primary) 35%, transparent) 10%,
+    color-mix(in oklab, var(--color-primary) 35%, transparent) 90%,
+    transparent 100%
+  );
+}
+
+.mc-rail::before {
+  left: 0;
+}
+
+.mc-rail::after {
+  right: 0;
+}

@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+*.tsbuildinfo
+
+# Environment variables (giữ lại .env.example làm mẫu)
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cache và coverage
+.vite
+.cache
+coverage
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.sw?
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Công cụ cục bộ (Claude Code, v.v.)
+.claude
+
+# Ảnh gốc dung lượng lớn. FE chỉ dùng bản đã nén trong src/assets/
+images/
