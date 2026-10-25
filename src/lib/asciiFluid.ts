@@ -1,12 +1,3 @@
-// Bộ giải fluid 2D lấy từ dự án FengDeskAI (src/utils/asciiFluid.ts), dùng cho nền động trang chủ.
-/**
- * Bộ giải fluid 2D rút gọn theo mô hình "Stable Fluids" (Jos Stam).
- *
- * Chạy trên lưới thô (mỗi ô ~16px màn hình) bằng Float32Array thuần nên chi phí
- * thấp hơn nhiều so với bản WebGL vẽ khói: không texture, không shader, không
- * đọc/ghi framebuffer. Kết quả (mật độ + vận tốc) được canvas 2D dịch sang ký tự
- * ASCII để biểu thị độ đậm nhạt.
- */
 
 const PRESSURE_ITERATIONS = 4;
 
@@ -14,10 +5,8 @@ export class FluidSolver {
   readonly cols: number;
   readonly rows: number;
 
-  /** Vận tốc theo trục X/Y, đơn vị: ô lưới / giây. */
   readonly u: Float32Array;
   readonly v: Float32Array;
-  /** Mật độ "mực" — giá trị càng cao ký tự vẽ ra càng đậm. */
   readonly density: Float32Array;
 
   private readonly uPrev: Float32Array;
@@ -42,10 +31,6 @@ export class FluidSolver {
     this.divergence = new Float32Array(size);
   }
 
-  /**
-   * Bơm một "vệt" lực + mực vào lưới quanh ô (cx, cy) với suy giảm dạng gaussian.
-   * fx/fy tính bằng ô lưới / giây.
-   */
   splat(cx: number, cy: number, fx: number, fy: number, amount: number, radius: number) {
     const { cols, rows, u, v, density } = this;
 
@@ -73,23 +58,12 @@ export class FluidSolver {
     }
   }
 
-  /**
-   * Đưa lưới về trạng thái nghỉ hoàn toàn.
-   *
-   * Dùng khi vòng lặp vẽ chuẩn bị ngủ: nếu chỉ ngừng gọi step() thì trường vận
-   * tốc bị ĐÓNG BĂNG ở giá trị cuối chứ không tắt dần, và lúc tỉnh lại nó sẽ
-   * hất mực mới đi một cú không ăn nhập với gì cả.
-   */
   reset() {
     this.u.fill(0);
     this.v.fill(0);
     this.density.fill(0);
   }
 
-  /**
-   * densityDecayFaint / densityDecayDense: phần mực còn lại sau frame này, tra
-   * theo chính độ đậm của ô — nhạt tan chậm, đậm tan nhanh (xem dissipate).
-   */
   step(dt: number, velocityDecay: number, densityDecayFaint: number, densityDecayDense: number) {
     this.project();
 
@@ -106,7 +80,6 @@ export class FluidSolver {
     this.dissipate(velocityDecay, densityDecayFaint, densityDecayDense);
   }
 
-  /** Truy ngược nửa Lagrange: mỗi ô lấy giá trị tại vị trí nó "đến từ". */
   private advect(
     dst: Float32Array,
     src: Float32Array,
@@ -143,7 +116,6 @@ export class FluidSolver {
     }
   }
 
-  /** Ép trường vận tốc về dạng không nén (khử divergence) bằng Jacobi. */
   private project() {
     const { cols, rows, u, v, pressure, divergence } = this;
 
@@ -182,14 +154,6 @@ export class FluidSolver {
     }
   }
 
-  /**
-   * Tiêu tán dần để vệt chuột tự tan, tránh lưới "đọng" mực vĩnh viễn.
-   *
-   * Hệ số tiêu tán nội suy theo chính độ đậm của ô: ô nhạt dùng
-   * densityDecayFaint (giữ lại nhiều → sống dai), ô đậm dùng densityDecayDense
-   * (tan nhanh). Nhờ vậy lõi đậm của mỗi cụm xẹp nhanh còn quầng nhạt quanh nó
-   * còn lưu lại lâu, thay vì cả cụm mờ đi cùng một nhịp.
-   */
   private dissipate(velocityDecay: number, densityDecayFaint: number, densityDecayDense: number) {
     const { u, v, density } = this;
     const span = densityDecayDense - densityDecayFaint;

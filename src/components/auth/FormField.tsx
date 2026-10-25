@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -59,5 +59,36 @@ export function SubmitButton({
     >
       {loading ? "Đang xử lý..." : children}
     </button>
+  );
+}
+
+interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label: string;
+  error?: string;
+}
+
+export function TextAreaField({ label, error, id, ...input }: TextAreaProps) {
+  const inputId = id ?? input.name;
+  return (
+    <div>
+      <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-ink">
+        {label}
+      </label>
+      <textarea
+        id={inputId}
+        rows={4}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${inputId}-error` : undefined}
+        {...input}
+        className={`w-full resize-y rounded-lg border bg-white/70 px-3.5 py-2.5 text-sm outline-none transition placeholder:text-ink-muted focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15 ${
+          error ? "border-primary" : "border-line"
+        }`}
+      />
+      {error && (
+        <p id={`${inputId}-error`} className="mt-1 text-xs text-primary">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

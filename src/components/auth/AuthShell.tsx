@@ -8,12 +8,9 @@ interface Props {
   subtitle: string;
   children: ReactNode;
   footer?: ReactNode;
-  /** Khung rộng hơn cho form nhiều cột (đăng ký) */
   wide?: boolean;
 }
 
-// Khung chung cho các trang đăng nhập, đăng ký, xác thực OTP:
-// ảnh phủ toàn trang, khung form nổi lên trên với nền kính mờ (blur).
 export function AuthShell({ title, subtitle, children, footer, wide = false }: Props) {
   return (
     <div className="relative isolate flex min-h-[calc(100vh-130px)] items-center justify-center overflow-hidden px-4 py-12">

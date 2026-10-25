@@ -10,7 +10,6 @@ import { EMAIL_REGEX, PHONE_REGEX /*, validatePassword */ } from "@/lib/validati
 const EMPTY = { fullName: "", email: "", phone: "", address: "", password: "", confirmPassword: "" };
 type Form = typeof EMPTY;
 
-// Cắt khoảng trắng đầu/cuối của mọi ô trước khi kiểm tra và gửi, vd "my name   " thành "my name".
 const trimForm = (form: Form): Form =>
   Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value.trim()])) as Form;
 
@@ -34,7 +33,6 @@ export function RegisterPage() {
     if (!EMAIL_REGEX.test(clean.email)) next.email = "Email không hợp lệ.";
     if (!PHONE_REGEX.test(clean.phone)) next.phone = "Số điện thoại không hợp lệ (ví dụ 0912345678).";
     if (clean.address.length > 255) next.address = "Địa chỉ tối đa 255 ký tự.";
-    // TẠM TẮT kiểm tra độ mạnh mật khẩu phía client. Backend vẫn kiểm tra và sẽ trả lỗi nếu mật khẩu yếu.
     // const passwordError = validatePassword(clean.password);
     // if (passwordError) next.password = passwordError;
     if (clean.confirmPassword !== clean.password) next.confirmPassword = "Mật khẩu xác nhận không khớp.";
@@ -44,7 +42,7 @@ export function RegisterPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const clean = trimForm(form);
-    setForm(clean); // hiện lại giá trị đã cắt khoảng trắng
+    setForm(clean); // show the trimmed values
     const next = validate(clean);
     setErrors(next);
     setServerError("");
@@ -53,7 +51,7 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await authApi.register(clean);
-      navigate("/xac-thuc-otp", { state: { email: clean.email, fresh: true } });
+      navigate("/verify-otp", { state: { email: clean.email, fresh: true } });
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) setErrors({ email: "Email này đã được đăng ký." });
       else setServerError(error instanceof ApiError ? error.message : "Không thể kết nối tới máy chủ.");
@@ -70,7 +68,7 @@ export function RegisterPage() {
       footer={
         <>
           Đã có tài khoản?{" "}
-          <Link to="/dang-nhap" className="font-semibold text-primary hover:underline">
+          <Link to="/login" className="font-semibold text-primary hover:underline">
             Đăng nhập
           </Link>
         </>

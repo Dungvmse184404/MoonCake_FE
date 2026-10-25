@@ -1,7 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Merriweather:wght@700;900&display=swap");
 @import "tailwindcss";
 
-/* Bảng màu lấy từ VNR202: nền kem sữa + đỏ đậm, điểm vàng */
 @theme {
   --font-sans: "Inter", sans-serif;
   --font-serif: "Merriweather", Georgia, serif;
@@ -21,7 +20,7 @@
   --color-line: #e4ddc9;
 
   --radius-card: 16px;
-  --page-max: 90rem; /* bề rộng nội dung; dải rail của nền trang chủ lấy cùng giá trị */
+  --page-max: 90rem; /* content width, also used by the homepage rails */
   --shadow-primary: 0 4px 14px 0 rgba(169, 30, 34, 0.28);
 }
 
@@ -37,20 +36,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* =========================
-   Nền động trang chủ (AmbientBackground)
-   Mây là khối màu bán trong suốt, chỉ animate transform. Cố ý không dùng mix-blend-mode:
-   nó buộc trình duyệt trộn lại mây với nền ở mỗi khung hình nên đắt hơn hẳn.
-========================= */
 .mc-ambient {
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--color-cream) 90%, var(--color-primary)) 0%,
-    color-mix(in oklab, var(--color-cream) 86%, var(--color-gold)) 55%,
-    color-mix(in oklab, var(--color-cream) 90%, var(--color-primary)) 100%
-  );
+  background: var(--color-cream);
 }
 
 .mc-cloud {
@@ -119,7 +108,6 @@ body {
   animation: mc-cloud-f 76s linear infinite;
 }
 
-/* Xoay chậm làm mép mảng mây đổi hình dáng */
 @keyframes mc-cloud-a {
   50% { transform: translate3d(8rem, 4rem, 0) rotate(180deg); }
   100% { transform: translate3d(0, 0, 0) rotate(360deg); }
@@ -151,7 +139,6 @@ body {
   }
 }
 
-/* Dải nội dung ở giữa, hai viền dọc (rail) trùng mép Container */
 .mc-rail {
   position: absolute;
   inset: 0;
@@ -160,14 +147,11 @@ body {
   margin-inline: auto;
 }
 
-/* Kính mờ: đẹp nhất nhưng đắt, vì mây phía sau luôn chuyển động nên vùng này phải blur lại mỗi khung hình.
-   Muốn rẻ hơn thì đổi RAIL_SURFACE sang "tint" trong AmbientBackground.tsx. */
 .mc-rail-blur {
   backdrop-filter: blur(12px) saturate(1.1);
   background: color-mix(in oklab, color-mix(in oklab, var(--color-cream) 80%, var(--color-primary)) 12%, transparent);
 }
 
-/* Đục màu, không blur */
 .mc-rail-tint {
   background: color-mix(in oklab, color-mix(in oklab, var(--color-cream) 80%, var(--color-primary)) 48%, transparent);
 }

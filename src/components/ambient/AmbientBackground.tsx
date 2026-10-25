@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FluidSolver } from "@/lib/asciiFluid";
 
-// Nền động của trang chủ (mô phỏng cách làm của FengDeskAI):
-//  1. mảng mây màu trôi chậm (CSS thuần, chỉ animate transform);
-//  2. lớp fluid vẽ bằng ký tự ASCII, các cụm mực tự nổi lên và tan ngẫu nhiên;
-//  3. dải nội dung ở giữa giữa hai thanh rail dọc, phần nền phía sau được làm mờ.
-// Fluid chỉ được vẽ ở hai lề ngoài rail, vì phần giữa bị rail che nên vẽ vào đó là phí.
-
-/** "blur": kính mờ thật (đẹp, tốn GPU). "tint": nền đục nhẹ, không blur (rẻ). */
+// "blur" is prettier but costs more GPU than "tint"
 const RAIL_SURFACE: "blur" | "tint" = "blur";
 
 const CLOUD_LAYERS = [1, 2, 3, 4, 5, 6];
@@ -23,11 +17,10 @@ const VELOCITY_RETENTION = 0.5;
 const DENSITY_RETENTION_FAINT = 0.52;
 const DENSITY_RETENTION_DENSE = 0.1;
 
-// Cụm mực trôi ngẫu nhiên: hiện dần, trôi lững lờ rồi tự tan
-const DRIFT_RADIUS = [2.8, 4] as const; // ô lưới
-const DRIFT_ATTACK = [0.8, 1.8] as const; // giây
-const DRIFT_RELEASE = [2.8, 3.4] as const; // giây
-const DRIFT_SPEED = 13; // ô/giây
+const DRIFT_RADIUS = [2.8, 4] as const; // grid cells
+const DRIFT_ATTACK = [0.8, 1.8] as const; // seconds
+const DRIFT_RELEASE = [2.8, 3.4] as const; // seconds
+const DRIFT_SPEED = 13; // cells per second
 const DRIFT_FEED = 6.2;
 const MAX_PUFFS = 4;
 
@@ -72,7 +65,6 @@ export function AmbientBackground() {
   const railRef = useRef<HTMLSpanElement | null>(null);
   const [fluidEnabled, setFluidEnabled] = useState(false);
 
-  // Chỉ bật fluid khi có chuột thật và người dùng không yêu cầu giảm chuyển động
   useEffect(() => {
     const finePointer = window.matchMedia("(pointer: fine)");
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -98,11 +90,9 @@ export function AmbientBackground() {
     let cssWidth = window.innerWidth;
     let cssHeight = window.innerHeight;
     let inkColors: string[][] = [];
-    // Cột bị rail che (không vẽ) và hai dải lề cần xoá mỗi khung hình
     let hiddenFrom = Number.POSITIVE_INFINITY;
     let hiddenTo = Number.NEGATIVE_INFINITY;
     let bands: Array<[number, number]> = [[0, cssWidth]];
-    // Màn hình hẹp hơn rail: không còn lề nào thấy được fluid, nên khỏi mô phỏng
     let nothingVisible = false;
 
     const puffs: Puff[] = [];
@@ -141,7 +131,6 @@ export function AmbientBackground() {
         return;
       }
 
-      // Ô thứ `col` vẽ ở tâm (col - 0.5) * cellPx; ô đầu tiên nằm trọn trong rail là ô có tâm vượt mép
       hiddenFrom = Math.ceil(rail.left / cellPx + 0.5) + 1;
       hiddenTo = Math.floor(rail.right / cellPx + 0.5) - 1;
       bands = [
@@ -196,7 +185,6 @@ export function AmbientBackground() {
       };
     };
 
-    // Hiện dần rồi ngừng bơm để cụm tự tan
     const envelopeOf = (puff: Puff) => {
       if (puff.age < puff.attack) {
         const t = puff.age / puff.attack;
@@ -276,7 +264,6 @@ export function AmbientBackground() {
 
       const drifted = updateDrift(dt);
 
-      // Không còn nguồn mực và không còn ô nào để vẽ thì ngủ: bỏ cả mô phỏng lẫn clearRect
       if (!drifted && painted === 0) {
         if (!idle) {
           solver.reset();
@@ -317,8 +304,6 @@ export function AmbientBackground() {
 
       {fluidEnabled && <canvas ref={canvasRef} className="absolute inset-0" />}
 
-      {/* Dải nội dung: hai thanh rail dọc ở hai mép (::before/::after) và nền mờ ở giữa.
-          Bề rộng lấy từ --page-max nên trùng với Container của trang. */}
       <span ref={railRef} className={`mc-rail ${RAIL_SURFACE === "blur" ? "mc-rail-blur" : "mc-rail-tint"}`} />
     </div>
   );

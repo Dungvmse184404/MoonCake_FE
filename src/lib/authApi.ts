@@ -1,6 +1,5 @@
 import { request, type Tokens } from "./api";
 
-// Khớp enum UserRole của backend (serialize dạng chuỗi nhờ JsonStringEnumConverter).
 export type ApiUserRole = "User" | "Manager" | "Organization";
 
 export interface CurrentUser {
@@ -43,6 +42,11 @@ export const authApi = {
     const { data } = await request<Tokens>("/auth/login", { method: "POST", body: { email, password } });
     return data!;
   },
+
+  forgotPassword: (email: string) => request("/auth/forgot-password", { method: "POST", body: { email } }),
+
+  resetPassword: (payload: { email: string; otpCode: string; newPassword: string; confirmNewPassword: string }) =>
+    request("/auth/reset-password", { method: "POST", body: payload }),
 
   logout: () => request("/auth/logout", { method: "POST", auth: true }),
 

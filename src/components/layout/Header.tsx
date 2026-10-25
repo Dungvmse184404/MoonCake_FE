@@ -1,21 +1,27 @@
 import { useState, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { ChevronDown, Menu, Moon, Search, ShoppingCart, Store, Truck, Undo2, X } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { categories } from "@/data/mock";
+import { catalogApi } from "@/lib/catalog";
+import { useAsync } from "@/lib/useAsync";
 import { AccountMenu } from "./AccountMenu";
+import { NotificationBell } from "./NotificationBell";
 import { Container } from "./Container";
 
 const navItems = [
   { to: "/", label: "Trang chủ", end: true },
-  { to: "/banh-trung-thu", label: "Bánh & hộp Trung thu" },
-  { to: "/san-pham", label: "Sản phẩm" },
-  { to: "/#gian-hang", label: "Gian hàng" },
-  { to: "/#gioi-thieu", label: "Giới thiệu" },
+  { to: "/cake-sets", label: "Bánh & hộp Trung thu" },
+  { to: "/products", label: "Sản phẩm" },
+  { to: "/stalls", label: "Gian hàng" },
+  { to: "/become-partner", label: "Trở thành đối tác" },
+  { to: "/#about", label: "Giới thiệu" },
 ];
 
 export function Header() {
   const { role } = useAuth();
+  const { count: cartCount } = useCart();
+  const { data: categories } = useAsync(() => catalogApi.listCategories(), []);
   const [menuOpen, setMenuOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
 
@@ -66,11 +72,12 @@ export function Header() {
         </form>
 
         <div className="ml-auto flex items-center gap-1 sm:ml-0">
-          {(role === "organizer" || role === "manager") && (
-            <IconLink to="/quan-ly-cua-hang" icon={<Store size={20} />} label="Gian hàng" />
+          {role === "organizer" && (
+            <IconLink to="/store" icon={<Store size={20} />} label="Gian hàng" />
           )}
+          {role !== "guest" && <NotificationBell />}
           <AccountMenu />
-          <IconLink to="/" icon={<ShoppingCart size={20} />} label="Giỏ hàng" />
+          <IconLink to="/cart" icon={<ShoppingCart size={20} />} label="Giỏ hàng" badge={cartCount} />
         </div>
       </Container>
 
@@ -84,10 +91,10 @@ export function Header() {
           </button>
           {catOpen && (
             <div className="absolute left-4 top-11 z-50 w-56 rounded-xl border border-line bg-white p-2 shadow-lg sm:left-6 lg:left-10">
-              {categories.map((c) => (
+              {categories?.map((c) => (
                 <Link
                   key={c.id}
-                  to="/san-pham"
+                  to={`/products?categoryId=${c.id}`}
                   onClick={() => setCatOpen(false)}
                   className="block rounded-lg px-3 py-2 text-sm text-ink-soft hover:bg-primary-soft hover:text-primary"
                 >
@@ -144,10 +151,15 @@ export function Header() {
   );
 }
 
-function IconLink({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
+function IconLink({ to, icon, label, badge = 0 }: { to: string; icon: ReactNode; label: string; badge?: number }) {
   return (
-    <Link to={to} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-ink-soft hover:text-primary">
+    <Link to={to} className="relative flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-ink-soft hover:text-primary">
       {icon}
+      {badge > 0 && (
+        <span className="absolute right-1.5 top-0 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-4 text-white">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
       <span className="hidden text-[11px] sm:block">{label}</span>
     </Link>
   );

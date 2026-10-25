@@ -3,8 +3,6 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth, type Role } from "@/context/AuthContext";
 import { Container } from "./Container";
 
-// Chặn trang theo vai trò. Khách thì chuyển tới đăng nhập, sai vai trò thì báo không có quyền.
-// Đây chỉ là lớp giao diện; quyền thật vẫn do backend kiểm tra bằng policy.
 export function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { role, loading } = useAuth();
   const location = useLocation();
@@ -12,7 +10,7 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
   if (loading) return <Container className="py-20 text-center text-ink-muted">Đang tải...</Container>;
 
   if (role === "guest") {
-    return <Navigate to="/dang-nhap" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   }
 
   if (!roles.includes(role)) {

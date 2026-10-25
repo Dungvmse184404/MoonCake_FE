@@ -7,7 +7,6 @@ interface Props {
   description: string;
 }
 
-// Trang giữ chỗ cho các màn hình sẽ làm sau.
 export function PlaceholderPage({ title, description }: Props) {
   return (
     <Container className="py-20 text-center">

@@ -42,7 +42,7 @@ export function VerifyOtpPage() {
     setSubmitting(true);
     try {
       await authApi.verifyOtp(email.trim(), otp);
-      navigate("/dang-nhap", {
+      navigate("/login", {
         replace: true,
         state: { email: email.trim(), notice: "Xác thực email thành công. Vui lòng đăng nhập." },
       });
@@ -71,7 +71,7 @@ export function VerifyOtpPage() {
       title="Xác thực email"
       subtitle="Nhập mã OTP gồm 6 chữ số đã gửi tới email của bạn."
       footer={
-        <Link to="/dang-nhap" className="font-semibold text-primary hover:underline">
+        <Link to="/login" className="font-semibold text-primary hover:underline">
           Quay lại đăng nhập
         </Link>
       }
@@ -86,7 +86,7 @@ export function VerifyOtpPage() {
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
-          placeholder="______"
+          placeholder="123456"
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
         />
@@ -104,7 +104,6 @@ export function VerifyOtpPage() {
   );
 }
 
-// Một số thông báo thường gặp từ backend (tiếng Anh) đổi sang tiếng Việt.
 function translate(message: string): string {
   if (/invalid or has expired/i.test(message)) return "Mã OTP không hợp lệ hoặc đã hết hạn. Hãy gửi lại mã mới.";
   if (/too many|attempts/i.test(message)) return "Bạn đã nhập sai quá nhiều lần. Hãy gửi lại mã mới.";

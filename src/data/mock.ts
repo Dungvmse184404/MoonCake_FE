@@ -1,4 +1,3 @@
-// Dữ liệu mẫu cho trang chủ; sẽ thay bằng API của MoonCake_BE.
 export interface Banner {
   id: string;
   badge: string;
@@ -38,29 +37,3 @@ export const banners: Banner[] = [
     gradient: "from-[#8a1a1f] via-[#a91e22] to-[#d4a72c]",
   },
 ];
-
-export const categories = [
-  { id: "nuong", name: "Bánh nướng" },
-  { id: "deo", name: "Bánh dẻo" },
-  { id: "hop-qua", name: "Hộp quà" },
-  { id: "chay", name: "Bánh chay" },
-  { id: "mini", name: "Bánh mini" },
-  { id: "combo", name: "Combo tự chọn" },
-];
-
-export const featuredStores = [
-  { id: "s1", name: "Hương Nguyệt", location: "Gian A-01", rating: 4.9, products: 24 },
-  { id: "s2", name: "Trăng Vàng", location: "Gian A-05", rating: 4.8, products: 18 },
-  { id: "s3", name: "Sen Việt", location: "Gian B-02", rating: 4.7, products: 15 },
-  { id: "s4", name: "Bánh Quê Nhà", location: "Online", rating: 4.8, products: 12 },
-];
-
-export const featuredProducts = [
-  { id: "p1", name: "Bánh nướng thập cẩm", store: "Hương Nguyệt", price: 85000 },
-  { id: "p2", name: "Bánh dẻo nhân sen", store: "Sen Việt", price: 65000 },
-  { id: "p3", name: "Hộp quà Trăng Vàng (4 bánh)", store: "Trăng Vàng", price: 320000 },
-  { id: "p4", name: "Bánh nướng trứng muối", store: "Bánh Quê Nhà", price: 90000 },
-];
-
-export const formatVnd = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);

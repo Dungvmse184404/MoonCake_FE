@@ -1,10 +1,6 @@
-// Client gọi MoonCake_BE. Backend luôn bọc kết quả trong ApiResult:
-//   thành công: { isSuccess: true,  value: { code, message, data? } }
-//   thất bại:   { isSuccess: false, error: { code, message } }
 
-// Mặc định gọi thẳng tới API chạy ở cổng 8080 (container Docker). Đổi bằng VITE_API_BASE_URL trong .env.
-// Backend phải bật CORS cho origin của FE (Cors:AllowedOrigins trong appsettings.json).
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8080/api";
+// Backend wraps every response in ApiResult: { isSuccess, value: { data }, error: { message } }
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:5000/api";
 const TOKEN_KEY = "mooncake.tokens";
 
 export interface Tokens {
@@ -44,7 +40,6 @@ export function saveTokens(tokens: Tokens | null) {
     if (tokens) localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
     else localStorage.removeItem(TOKEN_KEY);
   } catch {
-    // localStorage có thể bị chặn; phiên đăng nhập chỉ sống trong tab này.
   }
 }
 
@@ -53,7 +48,6 @@ async function parse<T>(response: Response): Promise<{ message: string; data: T 
   try {
     body = (await response.json()) as ApiEnvelope<T>;
   } catch {
-    // Không phải JSON (ví dụ 401 từ middleware JWT không có body)
   }
 
   if (!response.ok || !body?.isSuccess) {
@@ -70,15 +64,25 @@ interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   auth?: boolean;
+  query?: Record<string, string | number | boolean | null | undefined>;
+}
+
+function withQuery(path: string, query: RequestOptions["query"]): string {
+  if (!query) return path;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== "") params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
 }
 
 let refreshing: Promise<Tokens | null> | null = null;
 
-async function refreshTokens(): Promise<Tokens | null> {
+export async function refreshTokens(): Promise<Tokens | null> {
   const current = loadTokens();
   if (!current) return null;
 
-  // Gộp nhiều request 401 cùng lúc thành một lần refresh.
   refreshing ??= fetch(`${API_BASE}/auth/refresh-token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -102,16 +106,17 @@ async function refreshTokens(): Promise<Tokens | null> {
 
 export async function request<T = undefined>(
   path: string,
-  { method = "GET", body, auth = false }: RequestOptions = {},
+  { method = "GET", body, auth = false, query }: RequestOptions = {},
 ): Promise<{ message: string; data: T | undefined }> {
+  const isForm = body instanceof FormData;
   const send = (tokens: Tokens | null) =>
-    fetch(`${API_BASE}${path}`, {
+    fetch(`${API_BASE}${withQuery(path, query)}`, {
       method,
       headers: {
-        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(body !== undefined && !isForm ? { "Content-Type": "application/json" } : {}),
         ...(auth && tokens ? { Authorization: `Bearer ${tokens.accessToken}` } : {}),
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
 
   let response = await send(loadTokens());

@@ -1,5 +1,3 @@
-// Kiểm tra phía client, khớp các quy tắc của backend (RegisterRequestValidator) để báo lỗi sớm.
-// Backend vẫn là nơi quyết định cuối cùng.
 
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const PHONE_REGEX = /^(0|\+84)(3|5|7|8|9)\d{8}$/;

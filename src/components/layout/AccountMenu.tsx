@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, Store, User, UserRound } from "lucide-react";
+import { LogOut, ShieldCheck, Store, User, UserRound } from "lucide-react";
 import { ROLE_LABEL, useAuth } from "@/context/AuthContext";
 
-// Khách: nút Đăng nhập. Đã đăng nhập: menu tên, vai trò, đăng xuất.
 export function AccountMenu() {
   const { user, role, loading, logout } = useAuth();
   const navigate = useNavigate();
@@ -31,7 +30,7 @@ export function AccountMenu() {
   if (!user) {
     return (
       <Link
-        to="/dang-nhap"
+        to="/login"
         className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-ink-soft hover:text-primary"
       >
         <User size={20} />
@@ -40,7 +39,7 @@ export function AccountMenu() {
     );
   }
 
-  const isSeller = role === "organizer" || role === "manager";
+  const isSeller = role === "organizer";
 
   const onLogout = async () => {
     setOpen(false);
@@ -75,16 +74,26 @@ export function AccountMenu() {
             </p>
           </div>
           <Link
-            to="/tai-khoan"
+            to="/account"
             role="menuitem"
             onClick={() => setOpen(false)}
             className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-soft hover:bg-primary-soft hover:text-primary"
           >
             <UserRound size={16} /> Thông tin cá nhân
           </Link>
+          {role === "manager" && (
+            <Link
+              to="/admin"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-soft hover:bg-primary-soft hover:text-primary"
+            >
+              <ShieldCheck size={16} /> Quản trị sàn
+            </Link>
+          )}
           {isSeller && (
             <Link
-              to="/quan-ly-cua-hang"
+              to="/store"
               role="menuitem"
               onClick={() => setOpen(false)}
               className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-soft hover:bg-primary-soft hover:text-primary"

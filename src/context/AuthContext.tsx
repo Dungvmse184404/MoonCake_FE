@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { loadTokens, saveTokens } from "@/lib/api";
+import { loadTokens, refreshTokens, saveTokens } from "@/lib/api";
+import { roleInToken } from "@/lib/jwt";
 import { authApi, type ApiUserRole, type CurrentUser } from "@/lib/authApi";
 
-// Vai trò dùng trong giao diện; ánh xạ từ UserRole của backend.
 export type Role = "guest" | "user" | "organizer" | "manager";
 
 const ROLE_FROM_API: Record<ApiUserRole, Role> = {
@@ -21,12 +21,21 @@ export const ROLE_LABEL: Record<Role, string> = {
 interface AuthState {
   user: CurrentUser | null;
   role: Role;
-  /** true trong lúc kiểm tra token đã lưu khi mở trang */
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  /** Cập nhật thông tin người dùng đang đăng nhập (sau khi sửa hồ sơ) để header và các trang khác đổi theo */
+  refreshUser: () => Promise<void>;
   updateUser: (user: CurrentUser) => void;
+}
+
+// The role lives in the access token, so refresh it when the DB role changed (e.g. partner approved)
+async function fetchCurrentUser(): Promise<CurrentUser> {
+  let me = await authApi.me();
+  const tokens = loadTokens();
+  if (tokens && roleInToken(tokens.accessToken) !== me.role) {
+    if (await refreshTokens()) me = await authApi.me();
+  }
+  return me;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -35,16 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(() => loadTokens() !== null);
 
-  // Khôi phục phiên đăng nhập từ token đã lưu.
   useEffect(() => {
     if (!loadTokens()) return;
     let cancelled = false;
 
-    authApi
-      .me()
+    fetchCurrentUser()
       .then((me) => !cancelled && setUser(me))
       .catch(() => {
-        // Token hỏng hoặc hết hạn cả refresh token
         saveTokens(null);
       })
       .finally(() => !cancelled && setLoading(false));
@@ -58,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const tokens = await authApi.login(email, password);
     saveTokens(tokens);
     try {
-      setUser(await authApi.me());
+      setUser(await fetchCurrentUser());
     } catch (error) {
       saveTokens(null);
       throw error;
@@ -69,15 +75,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout();
     } catch {
-      // Dù server lỗi vẫn đăng xuất phía client
     }
     saveTokens(null);
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    setUser(await fetchCurrentUser());
+  }, []);
+
   const value = useMemo<AuthState>(
-    () => ({ user, role: user ? ROLE_FROM_API[user.role] : "guest", loading, login, logout, updateUser: setUser }),
-    [user, loading, login, logout],
+    () => ({
+      user,
+      role: user ? ROLE_FROM_API[user.role] : "guest",
+      loading,
+      login,
+      logout,
+      refreshUser,
+      updateUser: setUser,
+    }),
+    [user, loading, login, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

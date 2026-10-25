@@ -28,7 +28,6 @@ export function LoginPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Cắt khoảng trắng đầu/cuối trước khi kiểm tra và gửi
     const cleanEmail = email.trim();
     const cleanPassword = password.trim();
     setEmail(cleanEmail);
@@ -36,8 +35,6 @@ export function LoginPage() {
 
     const next: typeof errors = {};
     if (!EMAIL_REGEX.test(cleanEmail)) next.email = "Email không hợp lệ.";
-    // TẠM TẮT kiểm tra mật khẩu phía client (để trống vẫn gửi lên, backend sẽ trả lỗi đăng nhập)
-    // if (!cleanPassword) next.password = "Vui lòng nhập mật khẩu.";
     setErrors(next);
     setServerError("");
     setUnverified(false);
@@ -68,7 +65,7 @@ export function LoginPage() {
       footer={
         <>
           Chưa có tài khoản?{" "}
-          <Link to="/dang-ky" className="font-semibold text-primary hover:underline">
+          <Link to="/register" className="font-semibold text-primary hover:underline">
             Đăng ký ngay
           </Link>
         </>
@@ -79,7 +76,7 @@ export function LoginPage() {
         {serverError && <FormAlert type="error">{serverError}</FormAlert>}
         {unverified && (
           <Link
-            to="/xac-thuc-otp"
+            to="/verify-otp"
             state={{ email: email.trim() }}
             className="block text-sm font-semibold text-primary hover:underline"
           >
@@ -104,6 +101,11 @@ export function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={errors.password}
         />
+        <div className="text-right">
+          <Link to="/forgot-password" className="text-sm font-semibold text-primary hover:underline">
+            Quên mật khẩu?
+          </Link>
+        </div>
         <SubmitButton loading={submitting}>Đăng nhập</SubmitButton>
       </form>
     </AuthShell>

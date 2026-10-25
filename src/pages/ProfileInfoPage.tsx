@@ -25,7 +25,6 @@ function validate(form: ProfileForm): FormErrors {
   const errors: FormErrors = {};
   if (!form.fullName) errors.fullName = "Vui lòng nhập họ tên.";
   else if (form.fullName.length > 100) errors.fullName = "Họ tên tối đa 100 ký tự.";
-  // Số điện thoại không bắt buộc, nhưng nếu nhập thì phải đúng định dạng
   if (form.phone && !PHONE_REGEX.test(form.phone)) errors.phone = "Số điện thoại không hợp lệ (ví dụ 0912345678).";
   if (form.address.length > 255) errors.address = "Địa chỉ tối đa 255 ký tự.";
   return errors;
@@ -48,7 +47,6 @@ export function ProfileInfoPage() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // Đồng bộ form với hồ sơ mỗi khi dữ liệu từ server đổi (lần tải đầu, sau khi lưu)
   useEffect(() => {
     setForm({ fullName: user?.fullName ?? "", phone: user?.phone ?? "", address: user?.address ?? "" });
   }, [user?.fullName, user?.phone, user?.address]);
@@ -65,7 +63,7 @@ export function ProfileInfoPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setForm(clean); // hiện lại giá trị đã cắt khoảng trắng
+    setForm(clean); // show the trimmed values
     const next = validate(clean);
     setErrors(next);
     setFeedback(null);
@@ -133,7 +131,6 @@ export function ProfileInfoPage() {
             error={errors.fullName}
           />
 
-          {/* Email chỉ đọc: backend chưa có chức năng đổi email */}
           <div>
             <label htmlFor="email" className="mb-1 flex items-center gap-2 text-sm font-medium text-ink">
               Email

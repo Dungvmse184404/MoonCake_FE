@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BarChart3, ShoppingBag, Store } from "lucide-react";
+import { ArrowRight, BarChart3, ClipboardCheck, ShieldCheck, ShoppingBag, Store } from "lucide-react";
+import { StorageImage } from "@/components/ui/StorageImage";
 import { useAuth } from "@/context/AuthContext";
 import giftbox from "@/assets/home/banner-giftbox.jpg";
 import giftboxDark from "@/assets/home/banner-giftbox1.png";
 import becomeSeller from "@/assets/home/banner-become-a-seller.webp";
 import toProducts from "@/assets/home/banner-to-products.webp";
 
-// Ảnh nền mờ nhẹ; khi rê chuột vào thì mờ thêm và phóng nhẹ để chữ nổi rõ hơn.
-function TileImage({ src, restOpacity }: { src: string; restOpacity: string }) {
+function TileImage({ image, restOpacity }: { image: TileImageSource; restOpacity: string }) {
   return (
-    <img
-      src={src}
-      alt=""
+    <StorageImage
+      path={image.path}
+      fallback={image.fallback}
       aria-hidden
       loading="lazy"
       className={`absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-105 group-hover:opacity-[0.12] ${restOpacity}`}
@@ -20,16 +20,27 @@ function TileImage({ src, restOpacity }: { src: string; restOpacity: string }) {
   );
 }
 
+interface TileImageSource {
+  path: string;
+  fallback: string;
+}
+
+const IMAGES = {
+  giftbox: { path: "home-page/banner-giftbox.jpg", fallback: giftbox },
+  giftboxDark: { path: "home-page/banner-giftbox1.png", fallback: giftboxDark },
+  becomeSeller: { path: "home-page/banner-become-a-seller.webp", fallback: becomeSeller },
+  toProducts: { path: "home-page/banner-to-products.webp", fallback: toProducts },
+} satisfies Record<string, TileImageSource>;
+
 const TILE = "group relative flex overflow-hidden rounded-[var(--radius-card)] shadow-md h-[220px] lg:h-auto";
 
 interface LightTileProps {
   to: string;
-  image: string;
+  image: TileImageSource;
   icon: ReactNode;
   title: string;
   description: string;
   cta: string;
-  /** "light": nền kem, chữ đỏ đậm. "red": cùng bố cục nhưng nền đỏ chủ đạo, chữ sáng. */
   tone?: "light" | "red";
 }
 
@@ -52,14 +63,12 @@ const TONE = {
   },
 } as const;
 
-// Hai ô giữa dùng chung bố cục này: ảnh nền mờ, chữ nằm dưới trái, icon chỉ hiện khi rê chuột.
 function LightTile({ to, image, icon, title, description, cta, tone = "light" }: LightTileProps) {
   const t = TONE[tone];
   return (
     <Link to={to} className={`${TILE} flex-col justify-end bg-gradient-to-br ${t.surface} p-6`}>
-      <TileImage src={image} restOpacity={t.imageOpacity} />
+      <TileImage image={image} restOpacity={t.imageOpacity} />
       <div className={`absolute inset-0 bg-gradient-to-t ${t.wash}`} />
-      {/* Icon nằm trong chip trắng để nổi rõ trên ảnh nền */}
       <span
         aria-hidden
         className="absolute right-6 top-6 grid size-14 scale-90 place-items-center rounded-full bg-white/90 text-primary opacity-0 shadow-md transition duration-300 group-hover:scale-100 group-hover:opacity-100"
@@ -77,19 +86,31 @@ function LightTile({ to, image, icon, title, description, cta, tone = "light" }:
   );
 }
 
-// Hai ô giữa phụ thuộc vai trò: chủ gian hàng vào trang quản lý, còn khách và User vào danh sách sản phẩm.
 export function FeatureTiles() {
   const { role } = useAuth();
-  const isSeller = role === "organizer" || role === "manager";
+  const isSeller = role === "organizer";
+  const isManager = role === "manager";
+  const iconProps = { size: 28, strokeWidth: 1.75 };
+
+  const first = isManager
+    ? { to: "/admin", icon: <ShieldCheck {...iconProps} />, title: "Quản Trị Sàn", description: "Duyệt đơn, gian hàng và Organizer", cta: "Vào trang quản trị" }
+    : isSeller
+      ? { to: "/store", icon: <Store {...iconProps} />, title: "Quản Lý Cửa Hàng", description: "Sản phẩm, hợp đồng thuê, hồ sơ của bạn", cta: "Vào trang quản lý" }
+      : { to: "/become-partner", icon: <Store {...iconProps} />, title: "Trở thành đối tác", description: "Thuê gian hàng hoặc bán online cùng MoonCake", cta: "Đăng ký ngay" };
+
+  const second = isManager
+    ? { to: "/admin", icon: <ClipboardCheck {...iconProps} />, title: "Đơn Chờ Duyệt", description: "Xem và xử lý đơn đăng ký đối tác.", cta: "Xem đơn" }
+    : isSeller
+      ? { to: "/store/products", icon: <BarChart3 {...iconProps} />, title: "Sản Phẩm Của Bạn", description: "Thêm, sửa và quản lý tồn kho sản phẩm.", cta: "Quản lý sản phẩm" }
+      : { to: "/products", icon: <ShoppingBag {...iconProps} />, title: "Mua Sắm Ngay", description: "Tìm bánh theo vị, giá và gian hàng. Áp voucher khi thanh toán.", cta: "Xem danh sách" };
 
   return (
     <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-[240px_230px]">
-      {/* Ô lớn: đi tới trang chọn bánh và hộp bánh Trung thu */}
       <Link
-        to="/banh-trung-thu"
+        to="/cake-sets"
         className={`${TILE} flex-col justify-end bg-gradient-to-br from-[#2b1214] via-[#4a1a1d] to-[#7a1418] p-6 text-white lg:col-span-2`}
       >
-        <TileImage src={giftbox} restOpacity="opacity-45" />
+        <TileImage image={IMAGES.giftbox} restOpacity="opacity-45" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#2b1214]/85 via-[#2b1214]/25 to-transparent" />
         <div className="relative">
           <h3 className="font-serif text-2xl font-black">Bộ Sưu Tập Trung Thu</h3>
@@ -102,12 +123,11 @@ export function FeatureTiles() {
         </div>
       </Link>
 
-      {/* Ô cao bên phải: sản phẩm mới ra mắt */}
       <Link
-        to="/san-pham"
+        to="/products"
         className={`${TILE} flex-col justify-between bg-gradient-to-b from-primary-soft to-cream-dark p-5 lg:row-span-2`}
       >
-        <TileImage src={giftboxDark} restOpacity="opacity-40" />
+        <TileImage image={IMAGES.giftboxDark} restOpacity="opacity-40" />
         <div className="absolute inset-0 bg-gradient-to-t from-primary-soft/95 via-primary-soft/20 to-transparent" />
         <span className="relative w-fit rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
           Mới ra mắt
@@ -121,28 +141,8 @@ export function FeatureTiles() {
         </div>
       </Link>
 
-      <LightTile
-        to={isSeller ? "/quan-ly-cua-hang" : "/san-pham"}
-        image={becomeSeller}
-        icon={<Store size={28} strokeWidth={1.75} />}
-        title={isSeller ? "Quản Lý Cửa Hàng" : "Trở thành đối tác"}
-        description={isSeller ? "Sản phẩm, hộp combo, voucher của bạn" : "Khám phá bánh từ nhiều gian hàng uy tín"}
-        cta={isSeller ? "Vào trang quản lý" : "Xem sản phẩm"}
-      />
-
-      <LightTile
-        tone="red"
-        to={isSeller ? "/quan-ly-cua-hang" : "/san-pham"}
-        image={toProducts}
-        icon={isSeller ? <BarChart3 size={28} strokeWidth={1.75} /> : <ShoppingBag size={28} strokeWidth={1.75} />}
-        title={isSeller ? "Đơn Hàng Và Hoa Hồng" : "Mua Sắm Ngay"}
-        description={
-          isSeller
-            ? "Theo dõi đơn hàng, xử lý nhanh và xem hoa hồng sàn."
-            : "Tìm bánh theo vị, giá và gian hàng. Áp voucher khi thanh toán."
-        }
-        cta={isSeller ? "Bắt đầu" : "Xem danh sách"}
-      />
+      <LightTile {...first} image={IMAGES.becomeSeller} />
+      <LightTile {...second} image={IMAGES.toProducts} tone="red" />
     </div>
   );
 }

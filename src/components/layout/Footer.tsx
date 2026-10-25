@@ -1,9 +1,10 @@
+import { Link } from "react-router-dom";
 import { Moon } from "lucide-react";
 import { Container } from "./Container";
 
 export function Footer() {
   return (
-    <footer id="gioi-thieu" className="mt-16 bg-primary-dark text-primary-soft">
+    <footer id="home-page" className="relative z-10 mt-16 bg-primary-dark text-primary-soft">
       <Container className="grid gap-8 py-10 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 font-serif text-xl font-black text-white">
@@ -25,8 +26,16 @@ export function Footer() {
         <div className="text-sm">
           <h3 className="mb-3 font-semibold text-white">Dành cho đối tác</h3>
           <ul className="space-y-2 text-primary-soft/80">
-            <li>Thuê gian hàng</li>
-            <li>Bán online cùng MoonCake</li>
+            <li>
+              <Link to="/become-partner?type=stall" className="hover:text-white">
+                Thuê gian hàng
+              </Link>
+            </li>
+            <li>
+              <Link to="/become-partner?type=online" className="hover:text-white">
+                Bán online cùng MoonCake
+              </Link>
+            </li>
             <li>Chính sách hoa hồng</li>
           </ul>
         </div>

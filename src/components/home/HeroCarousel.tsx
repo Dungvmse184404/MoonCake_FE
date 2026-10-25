@@ -5,7 +5,6 @@ import { banners } from "@/data/mock";
 
 const AUTO_PLAY_MS = 5000;
 
-// Banner các gian hàng. Hiện là nền gradient tạm, sau này thay bằng ảnh banner do Organizer đăng.
 export function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -46,13 +45,13 @@ export function HeroCarousel() {
           <p className="mt-1 text-xs text-white/70">{banner.store}</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              to="/san-pham"
+              to="/products"
               className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary-soft"
             >
               Mua ngay
             </Link>
             <Link
-              to="/san-pham"
+              to="/products"
               className="rounded-lg border border-white/50 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
             >
               Xem gian hàng
