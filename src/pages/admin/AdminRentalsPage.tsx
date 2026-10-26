@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { CalendarDays } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormField";
 import { Pager } from "@/components/ui/Pager";
@@ -14,7 +15,6 @@ const PAGE_SIZE = 8;
 // Flow 15: the manager can end an active contract early; the stall is released unless another rental is booked.
 export function AdminRentalsPage() {
   const [status, setStatus] = useState<RentalStatus | "">("");
-  const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -63,24 +63,15 @@ export function AdminRentalsPage() {
             </option>
           ))}
         </select>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
+        <SearchInput
+          value={query}
+          onSearch={(q) => {
             setPage(1);
-            setQuery(search.trim());
+            setQuery(q);
           }}
-          className="flex"
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm gian hàng hoặc thương hiệu"
-            className="w-56 rounded-l-lg border border-line bg-white px-3 py-1.5 outline-none focus:border-primary"
-          />
-          <button type="submit" className="rounded-r-lg bg-primary px-3 font-semibold text-white hover:bg-primary-dark">
-            Tìm
-          </button>
-        </form>
+          placeholder="Tìm gian hàng hoặc thương hiệu"
+          className="w-64"
+        />
       </div>
 
       {notice && <div className="mt-4"><FormAlert type={notice.type}>{notice.message}</FormAlert></div>}

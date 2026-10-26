@@ -2,6 +2,9 @@ import { request } from "./api";
 import type { Category, Filling, Product, ProductStatus } from "./catalog";
 import type { Paged } from "./organizerApi";
 
+// The backend takes an image list; the form edits a single primary image.
+const toImages = (imageUrl: string) => (imageUrl ? [{ imageUrl, sortOrder: 0, isPrimary: true }] : []);
+
 export interface ProductPayload {
   name: string;
   description: string;
@@ -27,12 +30,28 @@ export const productApi = {
   },
 
   create: async (payload: CreateProductPayload) => {
-    const { data } = await request<Product>("/products", { method: "POST", body: payload, auth: true });
+    const { imageUrl, ...rest } = payload;
+    const { data } = await request<Product>("/products", {
+      method: "POST",
+      body: { ...rest, images: toImages(imageUrl) },
+      auth: true,
+    });
     return data!;
   },
 
   update: async (id: string, payload: ProductPayload) => {
-    const { data } = await request<Product>(`/products/${id}`, { method: "PUT", body: payload, auth: true });
+    const { imageUrl, ...rest } = payload;
+    const { data } = await request<Product>(`/products/${id}`, {
+      method: "PUT",
+      body: { ...rest, images: toImages(imageUrl) },
+      auth: true,
+    });
+    return data!;
+  },
+
+  // Stalls the product is sold in; an empty list clears them (sold online only)
+  assignStalls: async (id: string, stallIds: string[]) => {
+    const { data } = await request<Product>(`/products/${id}/stalls`, { method: "PUT", body: { stallIds }, auth: true });
     return data!;
   },
 

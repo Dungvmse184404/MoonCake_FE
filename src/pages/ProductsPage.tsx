@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormField";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { Container } from "@/components/layout/Container";
@@ -13,12 +12,14 @@ export function ProductsPage() {
   const category = params.get("categoryId") ?? "";
   const search = params.get("q") ?? "";
   const page = Number(params.get("page") ?? 1) || 1;
-  const [draft, setDraft] = useState(search);
+  // Set from a product page ("more from this shop"); the name only labels the filter
+  const organizerId = params.get("organizerId") ?? "";
+  const brand = params.get("brand") ?? "";
 
   const { data: categories } = useAsync(() => catalogApi.listCategories(), []);
   const { data, loading, error } = useAsync(
-    () => catalogApi.listProducts({ categoryId: category || undefined, search, page }),
-    [category, search, page],
+    () => catalogApi.listProducts({ categoryId: category || undefined, organizerId: organizerId || undefined, search, page }),
+    [category, organizerId, search, page],
   );
 
   const update = (changes: Record<string, string>) => {
@@ -37,25 +38,14 @@ export function ProductsPage() {
 
   return (
     <Container className="py-8">
-      <h1 className="font-serif text-2xl font-black text-primary-dark">Sản phẩm</h1>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          update({ q: draft.trim() });
-        }}
-        className="mt-4 flex max-w-xl overflow-hidden rounded-lg border border-line bg-white"
-      >
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Tìm theo tên bánh hoặc gian hàng"
-          className="min-w-0 flex-1 px-4 py-2.5 text-sm outline-none placeholder:text-ink-muted"
-        />
-        <button type="submit" className="bg-primary px-4 text-white hover:bg-primary-dark" aria-label="Tìm kiếm">
-          <Search size={18} />
+      <h1 className="font-serif text-2xl font-black text-primary-dark">{organizerId && brand ? `Sản phẩm của ${brand}` : "Sản phẩm"}</h1>
+      {organizerId && (
+        <button onClick={() => update({ organizerId: "", brand: "" })} className="mt-1 text-sm font-semibold text-primary hover:underline">
+          Xem sản phẩm của mọi gian hàng
         </button>
-      </form>
+      )}
+
+      <SearchInput value={search} onSearch={(q) => update({ q })} placeholder="Tìm theo tên bánh hoặc gian hàng" className="mt-4 max-w-xl" />
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button className={chip(!category)} onClick={() => update({ categoryId: "" })}>

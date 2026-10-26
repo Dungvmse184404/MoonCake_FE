@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { AddressField } from "@/components/address/AddressField";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { FormAlert, FormField, SubmitButton } from "@/components/auth/FormField";
@@ -81,7 +82,12 @@ export function RegisterPage() {
           <FormField label="Email" name="email" type="email" autoComplete="email" value={form.email} onChange={set("email")} error={errors.email} />
           <FormField label="Số điện thoại" name="phone" type="tel" autoComplete="tel" value={form.phone} onChange={set("phone")} error={errors.phone} />
         </div>
-        <FormField label="Địa chỉ (không bắt buộc)" name="address" autoComplete="street-address" value={form.address} onChange={set("address")} error={errors.address} />
+        <AddressField
+          label="Địa chỉ (không bắt buộc)"
+          value={form.address}
+          onChange={(address) => setForm((f) => ({ ...f, address }))}
+          error={errors.address}
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Mật khẩu" name="password" type="password" autoComplete="new-password" value={form.password} onChange={set("password")} error={errors.password} />
           <FormField label="Nhập lại mật khẩu" name="confirmPassword" type="password" autoComplete="new-password" value={form.confirmPassword} onChange={set("confirmPassword")} error={errors.confirmPassword} />

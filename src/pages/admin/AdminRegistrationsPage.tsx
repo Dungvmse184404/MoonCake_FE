@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { CalendarDays, Mail } from "lucide-react";
 import { FormAlert, FormField, TextAreaField } from "@/components/auth/FormField";
 import { Pager } from "@/components/ui/Pager";
@@ -17,7 +18,6 @@ type Action = { id: string; kind: "approve" | "reject" };
 export function AdminRegistrationsPage() {
   const [status, setStatus] = useState<RegistrationStatus | "">("Pending");
   const [type, setType] = useState<RegistrationType | "">("");
-  const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [action, setAction] = useState<Action | null>(null);
@@ -118,24 +118,15 @@ export function AdminRegistrationsPage() {
             </option>
           ))}
         </select>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
+        <SearchInput
+          value={query}
+          onSearch={(q) => {
             setPage(1);
-            setQuery(search.trim());
+            setQuery(q);
           }}
-          className="flex"
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm thương hiệu, tên, email"
-            className="w-56 rounded-l-lg border border-line bg-white px-3 py-1.5 outline-none focus:border-primary"
-          />
-          <button type="submit" className="rounded-r-lg bg-primary px-3 font-semibold text-white hover:bg-primary-dark">
-            Tìm
-          </button>
-        </form>
+          placeholder="Tìm thương hiệu, tên, email"
+          className="w-64"
+        />
       </div>
 
       {notice && (

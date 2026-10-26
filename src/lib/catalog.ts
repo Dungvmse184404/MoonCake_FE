@@ -24,6 +24,7 @@ export interface Product {
   name: string;
   description?: string | null;
   imageUrl?: string | null;
+  stallIds?: string[];
   price: number;
   stockQuantity: number;
   status: ProductStatus;
@@ -34,6 +35,8 @@ export interface Product {
 
 export interface ProductQuery {
   categoryId?: string;
+  organizerId?: string;
+  stallId?: string;
   search?: string;
   page?: number;
   pageSize?: number;
@@ -54,9 +57,9 @@ export const catalogApi = {
     });
   },
 
-  listProducts: async ({ categoryId, search, page = 1, pageSize = 8 }: ProductQuery) => {
+  listProducts: async ({ categoryId, organizerId, stallId, search, page = 1, pageSize = 8 }: ProductQuery) => {
     const { data } = await request<Paged<Product>>("/products", {
-      query: { status: "Active", categoryId, search, page, pageSize },
+      query: { status: "Active", categoryId, organizerId, stallId, search, page, pageSize },
     });
     return data!;
   },

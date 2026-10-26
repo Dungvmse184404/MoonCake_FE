@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Container } from "./Container";
 
 export interface SideNavItem {
@@ -10,6 +10,7 @@ export interface SideNavItem {
 }
 
 export function SideNavLayout({ title, items }: { title: string; items: SideNavItem[] }) {
+  const { pathname } = useLocation();
   return (
     <Container className="py-8">
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
@@ -55,7 +56,10 @@ export function SideNavLayout({ title, items }: { title: string; items: SideNavI
 
         <main className="min-w-0 flex-1">
           <div className="min-h-[400px] rounded-xl border border-line bg-white p-6 shadow-sm">
-            <Outlet />
+            {/* The sidebar stays put; only the panel content plays the page transition */}
+            <div key={pathname} className="mc-page-enter">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>

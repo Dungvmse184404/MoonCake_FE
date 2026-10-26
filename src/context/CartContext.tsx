@@ -1,127 +1,57 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Product } from "@/lib/catalog";
-
-// The backend has no cart API yet, so the cart lives in this browser only.
-const STORAGE_KEY = "mooncake.cart";
-export const MAX_LINE_QUANTITY = 99;
-
-export interface CartItem {
-  productId: string;
-  name: string;
-  imageUrl?: string | null;
-  price: number;
-  brandName: string;
-  organizerId: string;
-  stockQuantity: number;
-  quantity: number;
-}
+import { useAuth } from "@/context/AuthContext";
+import { cartApi, type Cart } from "@/lib/cartApi";
 
 interface CartContextValue {
-  items: CartItem[];
+  cart: Cart | null;
   count: number;
-  total: number;
-  add: (product: Product, quantity?: number) => void;
-  setQuantity: (productId: string, quantity: number) => void;
-  remove: (productId: string) => void;
-  clear: () => void;
-  // Replaces the stored price and stock with fresh values, dropping products that are gone.
-  sync: (fresh: Array<Product | null>, ids: string[]) => void;
+  loading: boolean;
+  refresh: () => Promise<void>;
+  addProduct: (productId: string, stallId?: string | null) => Promise<void>;
+  addBox: (boxItemId: string, stallId?: string | null) => Promise<void>;
+  remove: (itemId: string) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const limitOf = (item: Pick<CartItem, "stockQuantity">) => Math.max(1, Math.min(item.stockQuantity, MAX_LINE_QUANTITY));
-
-function load(): CartItem[] {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((i) => i?.productId && i.quantity > 0) : [];
-  } catch {
-    return [];
-  }
-}
-
+// The cart lives on the server, one per account; guests have none.
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(load);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
+    if (!userId) return setCart(null);
+    setLoading(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      setCart(await cartApi.get());
     } catch {
-      // Storage blocked: the cart still works for this session.
+      // A failed refresh keeps whatever the cart showed before
+    } finally {
+      setLoading(false);
     }
-  }, [items]);
+  }, [userId]);
 
-  // Keep several tabs in step
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) setItems(load());
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    void refresh();
+  }, [refresh]);
+
+  const addProduct = useCallback(async (productId: string, stallId?: string | null) => {
+    setCart(await cartApi.addProduct(productId, stallId));
   }, []);
 
-  const add = useCallback((product: Product, quantity = 1) => {
-    setItems((current) => {
-      const existing = current.find((i) => i.productId === product.id);
-      const snapshot = {
-        name: product.name,
-        imageUrl: product.imageUrl,
-        price: product.price,
-        brandName: product.organizerBrandName,
-        organizerId: product.organizerId,
-        stockQuantity: product.stockQuantity,
-      };
-      if (existing) {
-        const next = { ...existing, ...snapshot };
-        next.quantity = Math.min(existing.quantity + quantity, limitOf(next));
-        return current.map((i) => (i.productId === product.id ? next : i));
-      }
-      return [...current, { productId: product.id, ...snapshot, quantity: Math.min(quantity, limitOf(snapshot)) }];
-    });
+  const addBox = useCallback(async (boxItemId: string, stallId?: string | null) => {
+    setCart(await cartApi.addBox(boxItemId, stallId));
   }, []);
 
-  const setQuantity = useCallback((productId: string, quantity: number) => {
-    setItems((current) =>
-      current.map((i) => (i.productId === productId ? { ...i, quantity: Math.max(1, Math.min(quantity, limitOf(i))) } : i)),
-    );
-  }, []);
-
-  const remove = useCallback((productId: string) => setItems((c) => c.filter((i) => i.productId !== productId)), []);
-  const clear = useCallback(() => setItems([]), []);
-
-  const sync = useCallback((fresh: Array<Product | null>, ids: string[]) => {
-    setItems((current) =>
-      current.flatMap((item) => {
-        const index = ids.indexOf(item.productId);
-        if (index === -1) return [item];
-        const product = fresh[index];
-        if (!product || product.status === "Draft" || product.status === "Inactive") return [];
-        const next = {
-          ...item,
-          name: product.name,
-          imageUrl: product.imageUrl,
-          price: product.price,
-          brandName: product.organizerBrandName,
-          stockQuantity: product.status === "OutOfStock" ? 0 : product.stockQuantity,
-        };
-        return [{ ...next, quantity: Math.min(next.quantity, limitOf(next)) }];
-      }),
-    );
+  const remove = useCallback(async (itemId: string) => {
+    setCart(await cartApi.remove(itemId));
   }, []);
 
   const value = useMemo<CartContextValue>(
-    () => ({
-      items,
-      count: items.reduce((n, i) => n + i.quantity, 0),
-      total: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
-      add,
-      setQuantity,
-      remove,
-      clear,
-      sync,
-    }),
-    [items, add, setQuantity, remove, clear, sync],
+    () => ({ cart, count: cart?.totalItemCount ?? 0, loading, refresh, addProduct, addBox, remove }),
+    [cart, loading, refresh, addProduct, addBox, remove],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

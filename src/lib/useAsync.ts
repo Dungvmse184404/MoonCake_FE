@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "./api";
+import { friendlyError } from "./errors";
 
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
@@ -13,7 +13,7 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
     setError("");
     fn()
       .then((result) => !cancelled && setData(result))
-      .catch((e) => !cancelled && setError(e instanceof ApiError ? e.message : "Không thể kết nối tới máy chủ."))
+      .catch((e) => !cancelled && setError(friendlyError(e)))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;

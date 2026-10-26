@@ -6,6 +6,7 @@ import { friendlyError } from "@/lib/errors";
 import { formatDate } from "@/lib/labels";
 import { notificationApi, type AppNotification } from "@/lib/notificationApi";
 import { useAsync } from "@/lib/useAsync";
+import { REALTIME_EVENTS, useRealtime } from "@/context/RealtimeContext";
 
 const PAGE_SIZE = 8;
 
@@ -18,6 +19,9 @@ export function NotificationsPage() {
     () => notificationApi.list({ isRead: unreadOnly ? false : undefined, page, pageSize: PAGE_SIZE }),
     [unreadOnly, page],
   );
+
+  // New notifications appear without reloading the page
+  useRealtime(REALTIME_EVENTS.notificationReceived, () => reload());
 
   const markRead = async (n: AppNotification) => {
     if (n.isRead) return;

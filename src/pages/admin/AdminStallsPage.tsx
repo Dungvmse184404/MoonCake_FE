@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from "react";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { AddressField } from "@/components/address/AddressField";
 import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { FormAlert, FormField, SubmitButton, TextAreaField } from "@/components/auth/FormField";
 import { Pager } from "@/components/ui/Pager";
@@ -24,7 +26,6 @@ const EMPTY: Form = { code: "", name: "", location: "", rentalPrice: "", descrip
 // Flow 4: the manager maintains the stall catalogue.
 export function AdminStallsPage() {
   const [status, setStatus] = useState<StallStatus | "">("");
-  const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Stall | "new" | null>(null);
@@ -126,7 +127,6 @@ export function AdminStallsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="Mã gian hàng" name="code" value={form.code} onChange={set("code")} error={errors.code} placeholder="A-01" />
             <FormField label="Tên gian hàng" name="name" value={form.name} onChange={set("name")} error={errors.name} />
-            <FormField label="Vị trí" name="location" value={form.location} onChange={set("location")} />
             <FormField
               label="Giá thuê (VND)"
               name="rentalPrice"
@@ -136,6 +136,13 @@ export function AdminStallsPage() {
               error={errors.rentalPrice}
             />
           </div>
+          <AddressField
+            label="Vị trí gian hàng"
+            streetLabel="Số nhà, tên đường hoặc khu vực"
+            streetPlaceholder="Khu A, tầng 1, 12 Nguyễn Huệ..."
+            value={form.location}
+            onChange={(location) => setForm((f) => ({ ...f, location }))}
+          />
           <TextAreaField label="Mô tả" name="description" rows={3} value={form.description} onChange={set("description")} />
           <div className="flex items-center gap-3">
             <div className="min-w-36">
@@ -165,24 +172,15 @@ export function AdminStallsPage() {
             </option>
           ))}
         </select>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
+        <SearchInput
+          value={query}
+          onSearch={(q) => {
             setPage(1);
-            setQuery(search.trim());
+            setQuery(q);
           }}
-          className="flex"
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm mã, tên, vị trí"
-            className="w-56 rounded-l-lg border border-line bg-white px-3 py-1.5 outline-none focus:border-primary"
-          />
-          <button type="submit" className="rounded-r-lg bg-primary px-3 font-semibold text-white hover:bg-primary-dark">
-            Tìm
-          </button>
-        </form>
+          placeholder="Tìm mã, tên, vị trí"
+          className="w-64"
+        />
       </div>
 
       {notice && <div className="mt-4"><FormAlert type={notice.type}>{notice.message}</FormAlert></div>}

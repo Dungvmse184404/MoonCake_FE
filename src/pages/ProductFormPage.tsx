@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { FormAlert, FormField, SubmitButton, TextAreaField } from "@/components/auth/FormField";
 import { ChipSelect } from "@/components/store/ChipSelect";
 import { ImageField } from "@/components/store/ImageField";
+import { StallCheckboxes } from "@/components/store/StallCheckboxes";
 import { catalogApi } from "@/lib/catalog";
 import { friendlyError } from "@/lib/errors";
 import { productApi } from "@/lib/productApi";
@@ -17,6 +18,7 @@ interface Form {
   stockQuantity: string;
   categoryIds: string[];
   fillingIds: string[];
+  stallIds: string[];
   publish: boolean;
 }
 
@@ -30,6 +32,7 @@ const EMPTY: Form = {
   stockQuantity: "0",
   categoryIds: [],
   fillingIds: [],
+  stallIds: [],
   publish: true,
 };
 
@@ -61,6 +64,7 @@ export function ProductFormPage() {
       stockQuantity: String(existing.stockQuantity),
       categoryIds: existing.categories.map((c) => c.id),
       fillingIds: existing.fillings.map((f) => f.id),
+      stallIds: existing.stallIds ?? [],
       publish: false,
     });
   }, [existing]);
@@ -115,9 +119,11 @@ export function ProductFormPage() {
     try {
       if (editing && id) {
         await productApi.update(id, payload);
+        await productApi.assignStalls(id, clean.stallIds);
         navigate("/store/products", { state: { notice: "Đã cập nhật sản phẩm." } });
       } else {
         const created = await productApi.create({ ...payload, stockQuantity: Number(clean.stockQuantity) });
+        if (clean.stallIds.length) await productApi.assignStalls(created.id, clean.stallIds);
         if (clean.publish) await productApi.setStatus(created.id, "Active");
         navigate("/store/products", {
           state: { notice: clean.publish ? "Đã tạo và đăng bán sản phẩm." : "Đã tạo sản phẩm ở trạng thái bản nháp." },
@@ -197,6 +203,8 @@ export function ProductFormPage() {
           }}
           error={errors.fillingIds}
         />
+
+        <StallCheckboxes selected={form.stallIds} onChange={(stallIds) => setForm((f) => ({ ...f, stallIds }))} />
 
         {!editing && (
           <label className="flex items-center gap-2 text-sm text-ink-soft">

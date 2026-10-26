@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { ChevronDown, Menu, Moon, Search, ShoppingCart, Store, Truck, Undo2, X } from "lucide-react";
+import { ChevronDown, Menu, Moon, ShoppingCart, Store, Truck, Undo2, X } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { EffectSettingsMenu } from "./EffectSettingsMenu";
+import { HeaderSearch } from "./HeaderSearch";
 import { useAuth } from "@/context/AuthContext";
 import { catalogApi } from "@/lib/catalog";
 import { useAsync } from "@/lib/useAsync";
@@ -57,24 +59,13 @@ export function Header() {
           <span className="font-serif text-xl font-black text-primary">MoonCake</span>
         </Link>
 
-        <form
-          onSubmit={(e) => e.preventDefault()}
-          className="hidden min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-line bg-cream sm:flex"
-        >
-          <input
-            type="search"
-            placeholder="Bạn cần tìm bánh gì?"
-            className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-ink-muted"
-          />
-          <button type="submit" className="bg-primary px-4 py-2.5 text-white hover:bg-primary-dark" aria-label="Tìm kiếm">
-            <Search size={18} />
-          </button>
-        </form>
+        <HeaderSearch className="hidden min-w-0 flex-1 sm:flex" />
 
         <div className="ml-auto flex items-center gap-1 sm:ml-0">
           {role === "organizer" && (
             <IconLink to="/store" icon={<Store size={20} />} label="Gian hàng" />
           )}
+          <EffectSettingsMenu />
           {role !== "guest" && <NotificationBell />}
           <AccountMenu />
           <IconLink to="/cart" icon={<ShoppingCart size={20} />} label="Giỏ hàng" badge={cartCount} />
@@ -126,15 +117,7 @@ export function Header() {
 
       {menuOpen && (
         <nav className="border-t border-line bg-white px-4 py-3 lg:hidden">
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="mb-3 flex overflow-hidden rounded-lg border border-line sm:hidden"
-          >
-            <input type="search" placeholder="Bạn cần tìm bánh gì?" className="min-w-0 flex-1 px-3 py-2 text-sm outline-none" />
-            <button type="submit" className="bg-primary px-3 text-white" aria-label="Tìm kiếm">
-              <Search size={16} />
-            </button>
-          </form>
+          <HeaderSearch className="mb-3 sm:hidden" />
           {navItems.map((item) => (
             <Link
               key={item.label}

@@ -1,6 +1,8 @@
 
 // Backend wraps every response in ApiResult: { isSuccess, value: { data }, error: { message } }
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:5000/api";
+// Server root without "/api", used by the SignalR hub
+export const API_ORIGIN = API_BASE.replace(/\/api\/?$/, "");
 const TOKEN_KEY = "mooncake.tokens";
 
 export interface Tokens {

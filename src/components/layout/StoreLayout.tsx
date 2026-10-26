@@ -7,9 +7,9 @@ const ITEMS: SideNavItem[] = [
   { name: "Hợp đồng thuê", path: "/store/rentals", icon: FileText },
   { name: "Sản phẩm", path: "/store/products", icon: Package },
   { name: "Danh mục & nhân bánh", path: "/store/catalog", icon: Tags },
-  { name: "Hộp combo", icon: Gift },
+  { name: "Hộp combo", path: "/store/boxes", icon: Gift },
   { name: "Voucher", icon: Ticket },
-  { name: "Đơn hàng", icon: Boxes },
+  { name: "Đơn hàng", path: "/store/orders", icon: Boxes },
   { name: "Hoa hồng", icon: BarChart3 },
 ];
 

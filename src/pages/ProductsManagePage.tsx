@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Moon, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormField";
+import { CakeImage } from "@/components/ui/CakeImage";
 import { Pager } from "@/components/ui/Pager";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { Product, ProductStatus } from "@/lib/catalog";
@@ -113,13 +114,7 @@ export function ProductsManagePage() {
       <ul className="space-y-3">
         {data?.items.map((p) => (
           <li key={p.id} className="flex flex-col gap-4 rounded-xl border border-line p-4 sm:flex-row">
-            <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-primary-soft to-cream-dark">
-              {p.imageUrl ? (
-                <img src={p.imageUrl} alt={p.name} loading="lazy" className="size-full object-cover" />
-              ) : (
-                <Moon className="size-9 text-primary/40" strokeWidth={1.25} />
-              )}
-            </div>
+            <CakeImage src={p.imageUrl} alt={p.name} className="size-24 shrink-0 rounded-lg" iconClassName="size-9" />
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-start justify-between gap-2">

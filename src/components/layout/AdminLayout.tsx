@@ -1,7 +1,8 @@
-import { ClipboardCheck, FileText, Store, UserCog, Users } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, FileText, Store, UserCog, Users } from "lucide-react";
 import { SideNavLayout, type SideNavItem } from "./SideNavLayout";
 
 const ITEMS: SideNavItem[] = [
+  { name: "Tổng quan", path: "/admin", icon: LayoutDashboard, end: true },
   { name: "Đơn đăng ký", path: "/admin/registrations", icon: ClipboardCheck },
   { name: "Gian hàng", path: "/admin/stalls", icon: Store },
   { name: "Organizer", path: "/admin/organizers", icon: Users },

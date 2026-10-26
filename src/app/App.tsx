@@ -26,6 +26,14 @@ import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { StoreCatalogPage } from "@/pages/StoreCatalogPage";
 import { AdminUsersPage } from "@/pages/admin/AdminUsersPage";
 import { CartPage } from "@/pages/CartPage";
+import { AdminOverviewPage } from "@/pages/admin/AdminOverviewPage";
+import { CommissionPolicyPage, NotFoundPage, OrderGuidePage, ReturnPolicyPage, VouchersPage } from "@/pages/InfoPages";
+import { CheckoutPage } from "@/pages/CheckoutPage";
+import { BoxDetailPage } from "@/pages/BoxDetailPage";
+import { BoxFormPage } from "@/pages/BoxFormPage";
+import { OrderDetailPage } from "@/pages/OrderDetailPage";
+import { OrdersPage } from "@/pages/OrdersPage";
+import { StoreBoxesPage } from "@/pages/StoreBoxesPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { VerifyOtpPage } from "@/pages/VerifyOtpPage";
@@ -39,7 +47,9 @@ export function App() {
         <Route path="cake-sets" element={<CakeSetsPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:id" element={<ProductDetailPage />} />
+        <Route path="boxes/:id" element={<BoxDetailPage />} />
         <Route path="cart" element={<CartPage />} />
+        <Route path="checkout" element={<CheckoutPage />} />
         <Route path="stalls" element={<StallsPage />} />
         <Route path="stalls/:id" element={<StallDetailPage />} />
         <Route
@@ -54,6 +64,11 @@ export function App() {
           <Route path="profile" element={<StoreProfilePage />} />
           <Route path="rentals" element={<StoreRentalsPage />} />
           <Route path="catalog" element={<StoreCatalogPage />} />
+          <Route path="orders" element={<OrdersPage mode="seller" />} />
+          <Route path="orders/:id" element={<OrderDetailPage mode="seller" />} />
+          <Route path="boxes" element={<StoreBoxesPage />} />
+          <Route path="boxes/new" element={<BoxFormPage />} />
+          <Route path="boxes/:id/edit" element={<BoxFormPage />} />
           <Route path="products" element={<ProductsManagePage />} />
           <Route path="products/new" element={<ProductFormPage />} />
           <Route path="products/:id/edit" element={<ProductFormPage />} />
@@ -66,7 +81,7 @@ export function App() {
             </RequireRole>
           }
         >
-          <Route index element={<Navigate to="registrations" replace />} />
+          <Route index element={<AdminOverviewPage />} />
           <Route path="registrations" element={<AdminRegistrationsPage />} />
           <Route path="stalls" element={<AdminStallsPage />} />
           <Route path="organizers" element={<AdminOrganizersPage />} />
@@ -91,6 +106,8 @@ export function App() {
         >
           <Route index element={<Navigate to="profile" replace />} />
           <Route path="profile" element={<ProfileInfoPage />} />
+          <Route path="orders" element={<OrdersPage mode="buyer" />} />
+          <Route path="orders/:id" element={<OrderDetailPage mode="buyer" />} />
           <Route path="registrations" element={<MyRegistrationsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
@@ -98,7 +115,11 @@ export function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="verify-otp" element={<VerifyOtpPage />} />
-        <Route path="*" element={<HomePage />} />
+        <Route path="help/ordering" element={<OrderGuidePage />} />
+        <Route path="policies/returns" element={<ReturnPolicyPage />} />
+        <Route path="policies/commission" element={<CommissionPolicyPage />} />
+        <Route path="vouchers" element={<VouchersPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { FormAlert, FormField, SubmitButton } from "@/components/auth/FormField";
 import { authApi } from "@/lib/authApi";
@@ -10,7 +10,7 @@ import { EMAIL_REGEX } from "@/lib/validation";
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<"email" | "reset">("email");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState((useLocation().state as { email?: string } | null)?.email ?? "");
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

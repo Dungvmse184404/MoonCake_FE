@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, MapPin, Search } from "lucide-react";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Check, MapPin } from "lucide-react";
 import { Pager } from "@/components/ui/Pager";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatVnd, STALL_STATUS_LABEL } from "@/lib/labels";
@@ -18,7 +19,6 @@ const PAGE_SIZE = 6;
 
 // A rented stall can still be booked for a later period (the backend rejects overlapping dates), so every stall is listed.
 export function StallPicker({ selected, onToggle, label = "Chọn gian hàng muốn thuê", error }: Props) {
-  const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StallStatus | "">("");
   const [page, setPage] = useState(1);
@@ -33,24 +33,15 @@ export function StallPicker({ selected, onToggle, label = "Chọn gian hàng mu�
       <p className="mb-1 text-sm font-medium text-ink">{label}</p>
 
       <div className="mb-3 flex flex-wrap gap-2">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
+        <SearchInput
+          value={query}
+          onSearch={(q) => {
             setPage(1);
-            setQuery(search.trim());
+            setQuery(q);
           }}
-          className="flex min-w-0 flex-1 overflow-hidden rounded-lg border border-line bg-white/70"
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo mã, tên hoặc vị trí"
-            className="min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-sm outline-none placeholder:text-ink-muted"
-          />
-          <button type="submit" className="bg-primary px-4 text-white hover:bg-primary-dark" aria-label="Tìm gian hàng">
-            <Search size={16} />
-          </button>
-        </form>
+          placeholder="Tìm theo mã, tên hoặc vị trí"
+          className="min-w-0 flex-1"
+        />
         <select
           value={status}
           onChange={(e) => {

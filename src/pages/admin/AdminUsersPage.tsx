@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { Mail, Phone } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormField";
 import { Pager } from "@/components/ui/Pager";
@@ -25,7 +26,6 @@ const STATUS_LABEL: Record<CurrentUser["status"], string> = {
 export function AdminUsersPage() {
   const [role, setRole] = useState<ApiUserRole | "">("");
   const [status, setStatus] = useState<CurrentUser["status"] | "">("");
-  const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
@@ -79,24 +79,15 @@ export function AdminUsersPage() {
             </option>
           ))}
         </select>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
+        <SearchInput
+          value={query}
+          onSearch={(q) => {
             setPage(1);
-            setQuery(search.trim());
+            setQuery(q);
           }}
-          className="flex"
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm tên hoặc email"
-            className="w-56 rounded-l-lg border border-line bg-white px-3 py-1.5 outline-none focus:border-primary"
-          />
-          <button type="submit" className="rounded-r-lg bg-primary px-3 font-semibold text-white hover:bg-primary-dark">
-            Tìm
-          </button>
-        </form>
+          placeholder="Tìm tên hoặc email"
+          className="w-64"
+        />
       </div>
 
       {error && <div className="mt-4"><FormAlert type="error">{error}</FormAlert></div>}

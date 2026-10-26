@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { Moon } from "lucide-react";
+import { BoxCard } from "@/components/catalog/BoxCard";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { Container } from "@/components/layout/Container";
+import { boxApi } from "@/lib/boxApi";
 import { catalogApi } from "@/lib/catalog";
 import { useAsync } from "@/lib/useAsync";
 
@@ -9,6 +11,7 @@ import { useAsync } from "@/lib/useAsync";
 export function CakeSetsPage() {
   const { data: categories } = useAsync(() => catalogApi.listCategories(), []);
   const { data: products } = useAsync(() => catalogApi.listFeaturedProducts(8), []);
+  const { data: boxes } = useAsync(() => boxApi.list({ pageSize: 8 }), []);
 
   return (
     <Container className="py-8">
@@ -34,6 +37,20 @@ export function CakeSetsPage() {
         </div>
       )}
 
+      {!!boxes?.items.length && (
+        <section className="mt-10" aria-labelledby="boxes-title">
+          <h2 id="boxes-title" className="font-serif text-xl font-black text-primary-dark">
+            Hộp combo
+          </h2>
+          <p className="mt-0.5 text-sm text-ink-soft">Tự chọn bánh và nhân bánh cho từng hộp.</p>
+          <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {boxes.items.map((b) => (
+              <BoxCard key={b.id} box={b} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {!!products?.length && (
         <section className="mt-10" aria-labelledby="new-products-title">
           <div className="flex items-end justify-between">
@@ -52,7 +69,7 @@ export function CakeSetsPage() {
         </section>
       )}
 
-      {!categories?.length && !products?.length && (
+      {!categories?.length && !products?.length && !boxes?.items.length && (
         <p className="mt-8 rounded-xl border border-dashed border-line px-6 py-12 text-center text-sm text-ink-muted">
           Chưa có sản phẩm nào. Hãy quay lại sau nhé.
         </p>

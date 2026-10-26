@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { StallsMap } from "@/components/address/StallsMap";
 import { useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormField";
 import { Container } from "@/components/layout/Container";
 import { StallCard } from "@/components/stalls/StallCard";
@@ -16,12 +17,18 @@ export function StallsPage() {
   const search = params.get("q") ?? "";
   const status = (params.get("status") ?? "") as StallStatus | "";
   const page = Number(params.get("page") ?? 1) || 1;
-  const [draft, setDraft] = useState(search);
 
   const { data, loading, error } = useAsync(
     () => organizerApi.listStalls({ search, status: status || undefined, page, pageSize: PAGE_SIZE }),
     [search, status, page],
   );
+  // Every stall matching the filters, for the map (same sort as the list, so the page of a stall can be worked out)
+  const { data: all } = useAsync(
+    () => organizerApi.listStalls({ search, status: status || undefined, page: 1, pageSize: 100 }),
+    [search, status],
+  );
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const update = (changes: Record<string, string>) => {
     const next = new URLSearchParams(params);
@@ -32,28 +39,32 @@ export function StallsPage() {
     setParams(next);
   };
 
+  // Map click: go to the page that lists the stall, then bring its card into view and flash it
+  const onSelectStall = (id: string) => {
+    const index = all?.items.findIndex((s) => s.id === id) ?? -1;
+    if (index < 0) return;
+    const target = Math.floor(index / PAGE_SIZE) + 1;
+    setFlashId(null);
+    window.setTimeout(() => setFlashId(id), 0);
+    if (target !== page) update({ page: String(target) });
+  };
+
+  useEffect(() => {
+    if (!flashId || !data?.items.some((s) => s.id === flashId)) return;
+    // Always the same stop: the top of the list, just under the sticky header
+    const headerHeight = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
+    const top = (listRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY - headerHeight - 16;
+    window.scrollTo({ top, behavior: "smooth" });
+    const timer = window.setTimeout(() => setFlashId(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [flashId, data]);
+
   return (
     <Container className="py-8">
       <h1 className="font-serif text-2xl font-black text-primary-dark">Gian hàng</h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            update({ q: draft.trim() });
-          }}
-          className="flex w-full max-w-xl overflow-hidden rounded-lg border border-line bg-white"
-        >
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Tìm theo mã, tên hoặc vị trí"
-            className="min-w-0 flex-1 px-4 py-2.5 text-sm outline-none placeholder:text-ink-muted"
-          />
-          <button type="submit" className="bg-primary px-4 text-white hover:bg-primary-dark" aria-label="Tìm kiếm">
-            <Search size={18} />
-          </button>
-        </form>
+        <SearchInput value={search} onSearch={(q) => update({ q })} placeholder="Tìm theo mã, tên hoặc vị trí" className="w-full max-w-xl" />
         <select
           value={status}
           onChange={(e) => update({ status: e.target.value })}
@@ -77,9 +88,16 @@ export function StallsPage() {
             Chưa có gian hàng nào phù hợp.
           </p>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {!!all?.items.length && (
+          <div className="mb-6">
+            <StallsMap stalls={all.items} linkToStall={false} onSelect={onSelectStall} />
+          </div>
+        )}
+        <div ref={listRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {data?.items.map((s) => (
-            <StallCard key={s.id} stall={s} />
+            <div key={s.id} data-stall-id={s.id} className={`h-full rounded-xl ${flashId === s.id ? "mc-flash" : ""}`}>
+              <StallCard stall={s} />
+            </div>
           ))}
         </div>
         {data && (

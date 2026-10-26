@@ -1,3 +1,4 @@
+import type { OrderStatus } from "./orderApi";
 import type { ProductStatus } from "./catalog";
 import type { OrganizerStatus, RentalStatus, RegistrationStatus, RegistrationType, StallStatus } from "./organizerApi";
 
@@ -50,6 +51,22 @@ export const RENTAL_STATUS_TONE: Record<RentalStatus, Tone> = {
   Active: "success",
   Expired: "neutral",
   Terminated: "danger",
+};
+
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  Pending: "Chờ xác nhận",
+  Confirmed: "Đã xác nhận",
+  Delivering: "Đang giao",
+  Delivered: "Đã giao",
+  Cancelled: "Đã hủy",
+};
+
+export const ORDER_STATUS_TONE: Record<OrderStatus, Tone> = {
+  Pending: "warning",
+  Confirmed: "info",
+  Delivering: "info",
+  Delivered: "success",
+  Cancelled: "neutral",
 };
 
 export type Tone = "neutral" | "info" | "success" | "warning" | "danger";

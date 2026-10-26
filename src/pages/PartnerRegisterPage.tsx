@@ -120,7 +120,7 @@ function CustomerForm() {
     setSubmitting(true);
     try {
       await organizerApi.createRegistration({ type, ...clean, stallId, ...dates });
-      navigate("/account/registrations", { state: { notice: "Đã gửi đơn đăng ký. Manager sẽ xem xét và phản hồi sớm." } });
+      navigate("/account/registrations", { state: { notice: "Đã gửi đơn đăng ký. Đội ngũ hỗ trợ sẽ phản hồi bạn sớm nhất có thể." } });
     } catch (error) {
       setServerError(friendlyError(error));
     } finally {

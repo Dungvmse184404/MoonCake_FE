@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { Mail, Phone } from "lucide-react";
 import { FormAlert, TextAreaField } from "@/components/auth/FormField";
 import { Pager } from "@/components/ui/Pager";
@@ -14,7 +15,6 @@ const PAGE_SIZE = 8;
 // Manager view of organizers: suspend (reason required) or reactivate.
 export function AdminOrganizersPage() {
   const [status, setStatus] = useState<OrganizerStatus | "">("");
-  const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [suspendingId, setSuspendingId] = useState<string | null>(null);
@@ -68,24 +68,15 @@ export function AdminOrganizersPage() {
             </option>
           ))}
         </select>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
+        <SearchInput
+          value={query}
+          onSearch={(q) => {
             setPage(1);
-            setQuery(search.trim());
+            setQuery(q);
           }}
-          className="flex"
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm thương hiệu, tên, email"
-            className="w-56 rounded-l-lg border border-line bg-white px-3 py-1.5 outline-none focus:border-primary"
-          />
-          <button type="submit" className="rounded-r-lg bg-primary px-3 font-semibold text-white hover:bg-primary-dark">
-            Tìm
-          </button>
-        </form>
+          placeholder="Tìm thương hiệu, tên, email"
+          className="w-64"
+        />
       </div>
 
       {notice && <div className="mt-4"><FormAlert type={notice.type}>{notice.message}</FormAlert></div>}

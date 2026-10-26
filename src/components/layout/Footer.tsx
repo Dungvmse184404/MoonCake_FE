@@ -18,9 +18,21 @@ export function Footer() {
         <div className="text-sm">
           <h3 className="mb-3 font-semibold text-white">Dành cho khách hàng</h3>
           <ul className="space-y-2 text-primary-soft/80">
-            <li>Hướng dẫn đặt hàng</li>
-            <li>Chính sách đổi trả</li>
-            <li>Voucher và khuyến mãi</li>
+            <li>
+              <Link to="/help/ordering" className="hover:text-white">
+                Hướng dẫn đặt hàng
+              </Link>
+            </li>
+            <li>
+              <Link to="/policies/returns" className="hover:text-white">
+                Chính sách đổi trả
+              </Link>
+            </li>
+            <li>
+              <Link to="/vouchers" className="hover:text-white">
+                Voucher và khuyến mãi
+              </Link>
+            </li>
           </ul>
         </div>
         <div className="text-sm">
@@ -36,7 +48,11 @@ export function Footer() {
                 Bán online cùng MoonCake
               </Link>
             </li>
-            <li>Chính sách hoa hồng</li>
+            <li>
+              <Link to="/policies/commission" className="hover:text-white">
+                Chính sách hoa hồng
+              </Link>
+            </li>
           </ul>
         </div>
       </Container>

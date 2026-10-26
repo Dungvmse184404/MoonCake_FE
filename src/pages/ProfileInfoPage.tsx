@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { BadgeCheck, LogOut } from "lucide-react";
+import { AddressField } from "@/components/address/AddressField";
+import { Link, useNavigate } from "react-router-dom";
+import { BadgeCheck, KeyRound, LogOut } from "lucide-react";
 import { FormAlert, FormField, SubmitButton } from "@/components/auth/FormField";
 import { ROLE_LABEL, useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
@@ -159,14 +160,11 @@ export function ProfileInfoPage() {
             placeholder="0912345678"
           />
 
-          <FormField
-            label="Địa chỉ"
-            name="address"
-            autoComplete="street-address"
+          <AddressField
+            label="Địa chỉ nhận hàng"
             value={form.address}
-            onChange={set("address")}
+            onChange={(address) => setForm((f) => ({ ...f, address }))}
             error={errors.address}
-            placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -185,10 +183,17 @@ export function ProfileInfoPage() {
                 Hoàn tác
               </button>
             )}
+            <Link
+              to="/forgot-password"
+              state={{ email: user.email }}
+              className="ml-auto inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink-soft transition hover:border-primary hover:text-primary"
+            >
+              <KeyRound size={16} /> Đổi mật khẩu
+            </Link>
             <button
               type="button"
               onClick={onLogout}
-              className="ml-auto inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink-soft transition hover:border-primary hover:text-primary"
+              className="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink-soft transition hover:border-primary hover:text-primary"
             >
               <LogOut size={16} /> Đăng xuất
             </button>

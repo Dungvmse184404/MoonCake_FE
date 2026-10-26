@@ -113,7 +113,7 @@ export function FeatureTiles() {
         <TileImage image={IMAGES.giftbox} restOpacity="opacity-45" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#2b1214]/85 via-[#2b1214]/25 to-transparent" />
         <div className="relative">
-          <h3 className="font-serif text-2xl font-black">Bộ Sưu Tập Trung Thu</h3>
+          <h3 className="font-serif text-2xl font-black">Bộ Sưu Tập Hộp Quà</h3>
           <p className="mt-2 max-w-lg text-sm text-white/85">
             Chọn từng chiếc bánh nướng, bánh dẻo hoặc tự phối hộp quà theo khẩu vị của gia đình bạn.
           </p>

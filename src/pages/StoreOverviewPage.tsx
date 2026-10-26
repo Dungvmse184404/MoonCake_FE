@@ -1,15 +1,38 @@
 import { Link } from "react-router-dom";
 import { AlertTriangle, Mail, Phone, Store } from "lucide-react";
+import { boxApi } from "@/lib/boxApi";
+import { orderApi } from "@/lib/orderApi";
+import { productApi } from "@/lib/productApi";
 import { FormAlert } from "@/components/auth/FormField";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDate, ORGANIZER_STATUS_LABEL } from "@/lib/labels";
 import { organizerApi } from "@/lib/organizerApi";
 import { useAsync } from "@/lib/useAsync";
 
-const COMING_SOON = ["Đăng bán bánh lẻ và hộp combo", "Tạo voucher gian hàng", "Xử lý đơn hàng theo thời gian thực", "Xem hoa hồng sàn"];
+const COMING_SOON = ["Tạo voucher gian hàng", "Xem hoa hồng sàn"];
+
+// Totals come from the paged lists (pageSize 1, only totalCount is read)
+async function loadStats() {
+  const count = (p: Promise<{ totalCount: number }>) => p.then((r) => r.totalCount).catch(() => null);
+  const [pending, confirmed, activeProducts, outOfStock, boxes] = await Promise.all([
+    count(orderApi.organizerOrders({ status: "Pending", pageSize: 1 })),
+    count(orderApi.organizerOrders({ status: "Confirmed", pageSize: 1 })),
+    count(productApi.myProducts({ status: "Active", pageSize: 1 })),
+    count(productApi.myProducts({ status: "OutOfStock", pageSize: 1 })),
+    count(boxApi.mine({ status: "Active", pageSize: 1 })),
+  ]);
+  return [
+    { label: "Đơn chờ xác nhận", value: pending, to: "/store/orders" },
+    { label: "Đơn đã xác nhận", value: confirmed, to: "/store/orders" },
+    { label: "Sản phẩm đang bán", value: activeProducts, to: "/store/products" },
+    { label: "Sản phẩm hết hàng", value: outOfStock, to: "/store/products" },
+    { label: "Hộp combo đang bán", value: boxes, to: "/store/boxes" },
+  ];
+}
 
 export function StoreOverviewPage() {
   const { data: org, loading, error } = useAsync(() => organizerApi.myOrganizer(), []);
+  const { data: stats } = useAsync(loadStats, []);
 
   if (loading && !org) return <p className="text-sm text-ink-muted">Đang tải...</p>;
   if (error) return <FormAlert type="error">{error}</FormAlert>;
@@ -41,6 +64,17 @@ export function StoreOverviewPage() {
             <p className="mt-0.5 text-xs">Trong thời gian này bạn không thể đăng bán sản phẩm hoặc tạo voucher.</p>
           </div>
         </div>
+      )}
+
+      {stats && (
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="Số liệu cửa hàng">
+          {stats.map((s) => (
+            <Link key={s.label} to={s.to} className="rounded-xl border border-line p-4 transition hover:border-primary">
+              <p className="text-2xl font-black text-primary-dark">{s.value ?? "—"}</p>
+              <p className="mt-0.5 text-xs text-ink-muted">{s.label}</p>
+            </Link>
+          ))}
+        </section>
       )}
 
       <section className="rounded-xl border border-line p-5">
