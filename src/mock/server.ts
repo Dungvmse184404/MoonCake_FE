@@ -314,7 +314,7 @@ function confirmRegistration(reg: OrganizerRegistration, userId: string) {
     });
   }
 }
-const registrationOwners: Record<string, string> = { reg1: "u-buyer2", reg2: "u-org2" };
+const registrationOwners = db.registrationOwners;
 
 // ---- router ----
 

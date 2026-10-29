@@ -6,7 +6,7 @@ import type { Cart } from "@/lib/cartApi";
 import type { Category, Filling, Product } from "@/lib/catalog";
 import type { Feedback } from "@/lib/feedbackApi";
 import type { AppNotification } from "@/lib/notificationApi";
-import type { Order } from "@/lib/orderApi";
+import type { Order, OrderItem } from "@/lib/orderApi";
 import type { Organizer, OrganizerRegistration, Stall, StallRental } from "@/lib/organizerApi";
 import { BOX_IMAGES, cakeImage, type CakeLookName } from "./images";
 
@@ -338,8 +338,130 @@ const cartLines: Record<string, Array<{ id: string; kind: "Product" | "Box"; ref
   ],
 };
 
+// ---- extra volume so lists, filters, paging and dashboards have something to show ----
+
+users.push(
+  user("u-buyer3", "lan@mooncake.test", "Phạm Lan", "User", { phone: "0922222222", address: "8 Trần Phú, Hải Châu, Đà Nẵng" }),
+  user("u-buyer4", "hoang@mooncake.test", "Vũ Hoàng", "User", { phone: "0933333333", address: "21 Nguyễn Huệ, TP. Huế" }),
+  user("u-buyer5", "mai@mooncake.test", "Lê Mai", "User", { phone: "0944444444", address: "102 Cầu Giấy, Hà Nội" }),
+  user("u-buyer6", "an@mooncake.test", "Ngô An", "User", { phone: "0955555555", address: "5 Lý Thường Kiệt, Hải Phòng", status: "Locked" }),
+);
+
+stalls.push(
+  stall("s7", "D-01", "Khu thiếu nhi", "Khu D · cạnh khu vui chơi", 7_500_000, false),
+  stall("s8", "D-02", "Khu đèn lồng", "Khu D · dọc lối đèn lồng", 7_000_000, false),
+);
+
+rentals.push(
+  { ...rental("r4", stalls[5], o3, -70, -40), status: "Expired" },
+  { ...rental("r5", stalls[3], o2, -50, -30), status: "Terminated" },
+);
+
+const registrationOwners: Record<string, string> = { reg1: "u-buyer2", reg2: "u-org2", reg3: "u-buyer3", reg4: "u-buyer4", reg5: "u-buyer" };
+registrations.push(
+  { id: "reg3", userFullName: "Phạm Lan", userEmail: "lan@mooncake.test", type: "Online", brandName: "Bánh Lan Huế", contactPhone: "0922222222", businessInfo: "Bánh in, bánh nướng kiểu Huế.", status: "Pending", createdAt: days(-2) },
+  { id: "reg4", userFullName: "Vũ Hoàng", userEmail: "hoang@mooncake.test", type: "Stall", stallId: "s4", stallCode: "B-04", stallName: "Khu ẩm thực 2", brandName: "Hoàng Gia Bakery", contactPhone: "0933333333", startDate: date(1), endDate: date(20), status: "Rejected", reviewedAt: days(-3), rejectReason: "Thiếu giấy chứng nhận an toàn thực phẩm.", createdAt: days(-6) },
+  { id: "reg5", userFullName: "Nguyễn Thu", userEmail: "khach@mooncake.test", type: "Online", brandName: "Thu Bakery", contactPhone: "0900000000", businessInfo: "Bánh nướng nhà làm, giao nội thành.", commissionRate: 10, status: "AwaitingConfirmation", reviewedAt: days(-1), createdAt: days(-4) },
+);
+
+products.push(
+  product(o1, "Bánh nướng sầu riêng", 78_000, "bakedDark", ["o1-c1"], ["o1-f2"], { stallIds: ["s3"] }),
+  product(o1, "Bánh dẻo đậu xanh", 50_000, "snow", ["o1-c2"], ["o1-f1"], { stockQuantity: 5 }),
+  product(o2, "Bánh nướng dừa non", 66_000, "baked", ["o2-c1"], ["o2-f4"]),
+  product(o2, "Bánh dẻo trà xanh", 58_000, "pandan", ["o2-c3"], ["o2-f3"], { status: "Inactive" }),
+  product(o3, "Bánh chay hạt sen", 52_000, "snow", ["o3-c1"], ["o3-f3"]),
+  product(o3, "Bánh lạnh đậu đỏ", 72_000, "rose", ["o3-c2"], ["o3-f1"]),
+  product(o3, "Bánh nướng khoai môn", 70_000, "taro", ["o3-c3"], ["o3-f1", "o3-f3"]),
+  product(o3, "Bánh nướng matcha", 74_000, "matcha", ["o3-c3"], ["o3-f4"]),
+);
+
+boxes.push(
+  box("b5", o2, "Hộp Hoa Nguyệt", 6, 420_000, ["p5", "p6", "p7", "p15"], 1, ["s5"]),
+  box("b6", o3, "Hộp Chay Thanh Tịnh", 4, 260_000, ["p9", "p17"], 2),
+  { ...box("b7", o1, "Hộp Đèn Lồng", 8, 590_000, ["p1", "p2", "p13", "p14"], 0), status: "Draft" },
+);
+
+// Deterministic pseudo-random so the generated history is the same on every reload
+let seed = 7;
+const rand = (n: number) => {
+  seed = (seed * 16807) % 2147483647;
+  return seed % n;
+};
+
+const buyers = users.filter((u) => u.role === "User" && u.status === "Active");
+const statusCycle: Order["status"][] = ["Pending", "Confirmed", "Delivering", "Delivered", "Delivered", "Delivered", "Cancelled", "Confirmed"];
+const cancelReasons = ["Đặt nhầm nhân bánh", "Đổi địa chỉ nhận hàng", "Hết bánh nhân đã chọn"];
+
+for (let i = 0; i < 24; i++) {
+  const o = [o1, o1, o2, o3][i % 4];
+  const buyer = buyers[rand(buyers.length)];
+  const forSale = products.filter((p) => p.organizerId === o.id && p.status === "Active");
+  const first = forSale[rand(forSale.length)];
+  const stallId = first.stallIds?.[0] ?? null;
+  const sameStall = forSale.filter((p) => p !== first && (p.stallIds?.[0] ?? null) === stallId);
+  const picked = [first, ...(sameStall.length && rand(2) ? [sameStall[rand(sameStall.length)]] : [])];
+  const items: OrderItem[] = picked.map((p, k) => {
+    const quantity = 1 + rand(3);
+    return {
+      id: `goi${i}-${k}`, itemType: "Product", productId: p.id, categoryName: p.categories[0]?.name, fillingName: p.fillings[rand(p.fillings.length)]?.name,
+      name: p.name, imageUrl: p.imageUrl, quantity, unitPrice: p.price, subtotal: p.price * quantity, boxSelections: [],
+    };
+  });
+  const subtotal = items.reduce((n, it) => n + it.subtotal, 0);
+  const status = statusCycle[i % statusCycle.length];
+  const ago = 1 + i * 1.3;
+  const discount = subtotal > 200_000 ? 15_000 : 0;
+  const order: Order = {
+    id: `gor${i}`, orderCode: `MC-${1030 + i}`, stallId, organizerId: o.id, organizerBrandName: o.brandName,
+    receiverName: buyer.fullName, receiverPhone: buyer.phone ?? "", shippingAddress: buyer.address ?? "",
+    note: rand(3) === 0 ? "Gọi trước khi giao" : null, subtotalAmount: subtotal, platformDiscount: 0, organizerDiscount: discount,
+    totalAmount: subtotal - discount, status, items, createdAt: days(-ago),
+    confirmedAt: status === "Pending" || status === "Cancelled" ? null : days(-ago + 0.2),
+    deliveredAt: status === "Delivered" ? days(-ago + 1) : null,
+    cancelledAt: status === "Cancelled" ? days(-ago + 0.1) : null,
+    cancelReason: status === "Cancelled" ? cancelReasons[rand(cancelReasons.length)] : null,
+  };
+  orders.push(order);
+  orderOwners[order.id] = buyer.id;
+}
+
+const comments = [
+  "Bánh thơm, vỏ mỏng, nhân không quá ngọt.",
+  "Đóng gói cẩn thận, giao đúng giờ.",
+  "Nhân hơi ngọt so với mình nhưng vẫn ngon.",
+  "Mua biếu bố mẹ, cả nhà đều khen.",
+  "Bánh hơi khô, mong tiệm cải thiện.",
+  "Giá hợp lý, sẽ ủng hộ tiếp.",
+];
+const ratings = [5, 4, 5, 3, 5, 4, 2, 5, 4, 5];
+orders
+  .filter((o) => o.status === "Delivered" && o.id.startsWith("gor"))
+  .forEach((o, k) => {
+    const it = o.items[0];
+    const rating = ratings[k % ratings.length];
+    feedbacks.push({
+      id: `gfb${k}`, orderItemId: it.id, userName: o.receiverName, organizerBrandName: o.organizerBrandName, productId: it.productId, productName: it.name,
+      rating, comment: comments[k % comments.length], status: rating <= 2 && k % 2 === 0 ? "Hidden" : "Visible",
+      replyContent: k % 3 === 0 ? "Cảm ơn bạn đã ủng hộ tiệm!" : null, repliedAt: k % 3 === 0 ? days(-1) : null,
+      imageUrls: k % 4 === 0 && it.imageUrl ? [it.imageUrl] : [], createdAt: o.deliveredAt ?? o.createdAt,
+    });
+  });
+
+orders
+  .filter((o) => o.status === "Pending" && o.id.startsWith("gor"))
+  .forEach((o) => {
+    const ownerId = users.find((u) => u.organizerId === o.organizerId)?.id ?? "";
+    notifications.push(notification(`gn-${o.id}`, ownerId, `Đơn mới #${o.orderCode}`, `${o.receiverName} vừa đặt ${o.items.length} món.`, 0.5));
+  });
+notifications.push(
+  notification("n5", "u-admin", "Đơn đăng ký mới", "Bánh Lan Huế đăng ký bán online.", 2),
+  notification("n6", "u-buyer", "Đơn đăng ký đối tác đã được duyệt", "Thu Bakery được duyệt bán online, hoa hồng 10%. Hãy xác nhận để bắt đầu bán.", 1),
+  notification("n7", "u-org1", "Hợp đồng sắp hết hạn", "Gian A-01 hết hạn sau 25 ngày.", 3, true),
+);
+
 export const db = {
   users,
+  registrationOwners,
   organizers,
   stalls,
   rentals,
