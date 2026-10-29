@@ -1,4 +1,6 @@
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "");
+import { USE_MOCK } from "./api";
+
+const SUPABASE_URL =(import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "");
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const BUCKET = (import.meta.env.VITE_SUPABASE_BUCKET as string | undefined) ?? "images";
 
@@ -17,6 +19,8 @@ export class UploadError extends Error {}
 // Uploads into products/ with the anon key and returns the public URL to store in Product.ImageUrl.
 // The bucket needs an INSERT policy for the anon role on that folder, otherwise Supabase answers 400/403.
 export async function uploadProductImage(file: File): Promise<string> {
+  // Mock mode keeps the picked file in the browser for the session
+  if (USE_MOCK) return URL.createObjectURL(file);
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new UploadError("Chưa cấu hình Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY).");
   const extension = EXTENSIONS[file.type];
   if (!extension) throw new UploadError("Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.");

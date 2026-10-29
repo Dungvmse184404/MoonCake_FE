@@ -5,6 +5,11 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "h
 export const API_ORIGIN = API_BASE.replace(/\/api\/?$/, "");
 const TOKEN_KEY = "mooncake.tokens";
 
+// `pnpm dev:mock` (vite --mode mock) answers every call from the in-browser mock API instead of MoonCake_BE.
+export const USE_MOCK = import.meta.env.MODE === "mock" || import.meta.env.VITE_USE_MOCK === "true";
+const doFetch = (input: string, init?: RequestInit): Promise<Response> =>
+  USE_MOCK ? import("@/mock/server").then(({ mockFetch }) => mockFetch(input, init)) : fetch(input, init);
+
 export interface Tokens {
   accessToken: string;
   refreshToken: string;
@@ -85,7 +90,7 @@ export async function refreshTokens(): Promise<Tokens | null> {
   const current = loadTokens();
   if (!current) return null;
 
-  refreshing ??= fetch(`${API_BASE}/auth/refresh-token`, {
+  refreshing ??= doFetch(`${API_BASE}/auth/refresh-token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken: current.refreshToken }),
@@ -112,7 +117,7 @@ export async function request<T = undefined>(
 ): Promise<{ message: string; data: T | undefined }> {
   const isForm = body instanceof FormData;
   const send = (tokens: Tokens | null) =>
-    fetch(`${API_BASE}${withQuery(path, query)}`, {
+    doFetch(`${API_BASE}${withQuery(path, query)}`, {
       method,
       headers: {
         ...(body !== undefined && !isForm ? { "Content-Type": "application/json" } : {}),
