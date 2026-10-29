@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, Minus, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormField";
+import { BoxFiller, boxDetail, boxSelections, isBoxComplete, type BoxRow } from "@/components/catalog/BoxFiller";
 import { OptionChips } from "@/components/catalog/OptionChips";
 import { Container } from "@/components/layout/Container";
 import { CakeImage } from "@/components/ui/CakeImage";
@@ -14,15 +15,6 @@ import { saveCheckout } from "@/lib/checkout";
 import { loadStallNames } from "@/lib/stallNames";
 import { useAsync } from "@/lib/useAsync";
 import { useProfileGaps } from "@/lib/useProfileGaps";
-
-interface Row {
-  productId: string;
-  categoryId: string;
-  fillingId: string;
-  quantity: number;
-}
-
-const selectClass = "w-full rounded-lg border border-line bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary";
 
 // The buyer fills the box (quantities add up to its capacity) and buys it straight away.
 // The cart only keeps the box and stall; its cakes are chosen here when ordering.
@@ -37,7 +29,7 @@ export function BoxDetailPage() {
   const { data: box, loading, error } = useAsync(() => boxApi.get(id), [id]);
   const { data: stallNames } = useAsync(() => loadStallNames(), []);
 
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<BoxRow[]>([]);
   const [stallId, setStallId] = useState("");
   const [busy, setBusy] = useState<"buy" | "cart" | null>(null);
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -64,9 +56,8 @@ export function BoxDetailPage() {
   }
 
   const products = box.products.filter((p) => p.status === "Active");
-  const filled = rows.reduce((n, r) => n + r.quantity, 0);
-  const remaining = box.capacity - filled;
-  const complete = filled === box.capacity && rows.every((r) => r.categoryId && r.fillingId);
+  const remaining = box.capacity - rows.reduce((n, r) => n + r.quantity, 0);
+  const complete = isBoxComplete(rows, box.capacity);
   const stalls = box.stallIds.map((sid) => ({ id: sid, name: stallNames?.[sid] ?? "Gian hàng" }));
   const needsStall = stalls.length > 1;
   const savedLine = cart?.groups
@@ -74,44 +65,16 @@ export function BoxDetailPage() {
     .flatMap((g) => g.items)
     .find((i) => i.boxItemId === box.id);
 
-  const newRow = (): Row => {
-    const p = products[0];
-    return {
-      productId: p.id,
-      categoryId: p.categories.length === 1 ? p.categories[0].id : "",
-      fillingId: p.fillings.length === 1 ? p.fillings[0].id : "",
-      quantity: 1,
-    };
-  };
-
-  const patch = (index: number, change: Partial<Row>) =>
-    setRows((r) => r.map((row, i) => (i === index ? { ...row, ...change } : row)));
-
-  const changeProduct = (index: number, productId: string) => {
-    const p = products.find((x) => x.id === productId)!;
-    patch(index, {
-      productId,
-      categoryId: p.categories.length === 1 ? p.categories[0].id : "",
-      fillingId: p.fillings.length === 1 ? p.fillings[0].id : "",
-    });
-  };
-
   const toLogin = () =>
     navigate("/login", { state: { from: location.pathname + location.search, notice: "Vui lòng đăng nhập để tiếp tục." } });
 
   const onBuy = () => {
     if (!user) return toLogin();
-    const detail = rows
-      .map((r) => {
-        const p = products.find((x) => x.id === r.productId);
-        const filling = p?.fillings.find((f) => f.id === r.fillingId)?.name;
-        return `${r.quantity} × ${p?.name ?? "Bánh"}${filling ? ` (${filling})` : ""}`;
-      })
-      .join(", ");
+    const detail = boxDetail(rows, products);
     saveCheckout([
       {
         key: box.id,
-        line: { itemType: "Box", boxItemId: box.id, stallId: stallId || null, selections: rows },
+        line: { itemType: "Box", boxItemId: box.id, stallId: stallId || null, selections: boxSelections(rows) },
         name: box.name,
         imageUrl: box.imageUrl,
         kind: "box",
@@ -171,93 +134,7 @@ export function BoxDetailPage() {
             <p className="rounded-lg bg-cream px-4 py-3 text-sm font-semibold text-ink-soft">Hộp này chưa có bánh để chọn.</p>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-ink">
-                Chọn bánh cho hộp ({filled}/{box.capacity})
-              </p>
-
-              {rows.map((row, index) => {
-                const product = products.find((p) => p.id === row.productId)!;
-                return (
-                  <div key={index} className="space-y-2 rounded-lg border border-line p-3">
-                    <select
-                      value={row.productId}
-                      onChange={(e) => changeProduct(index, e.target.value)}
-                      aria-label="Bánh"
-                      className={selectClass}
-                    >
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="flex flex-wrap gap-2">
-                      <select
-                        value={row.categoryId}
-                        onChange={(e) => patch(index, { categoryId: e.target.value })}
-                        aria-label="Loại bánh"
-                        className={`${selectClass} flex-1`}
-                      >
-                        {product.categories.length !== 1 && <option value="">Loại bánh...</option>}
-                        {product.categories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={row.fillingId}
-                        onChange={(e) => patch(index, { fillingId: e.target.value })}
-                        aria-label="Nhân bánh"
-                        className={`${selectClass} flex-1`}
-                      >
-                        {product.fillings.length !== 1 && <option value="">Nhân bánh...</option>}
-                        {product.fillings.map((f) => (
-                          <option key={f.id} value={f.id}>
-                            {f.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="inline-flex items-center overflow-hidden rounded-lg border border-line text-sm">
-                        <button
-                          onClick={() => patch(index, { quantity: row.quantity - 1 })}
-                          disabled={row.quantity <= 1}
-                          aria-label="Giảm số lượng"
-                          className="grid size-8 place-items-center hover:bg-cream disabled:opacity-40"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="w-10 text-center font-semibold">{row.quantity}</span>
-                        <button
-                          onClick={() => patch(index, { quantity: row.quantity + 1 })}
-                          disabled={remaining <= 0}
-                          aria-label="Tăng số lượng"
-                          className="grid size-8 place-items-center hover:bg-cream disabled:opacity-40"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => setRows((r) => r.filter((_, i) => i !== index))}
-                        aria-label="Bỏ dòng này"
-                        className="grid size-8 place-items-center rounded-lg border border-line text-ink-soft hover:border-primary hover:text-primary"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-
-              <button
-                onClick={() => setRows((r) => [...r, newRow()])}
-                disabled={remaining <= 0}
-                className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-ink-soft hover:border-primary hover:text-primary disabled:opacity-50"
-              >
-                <Plus size={14} /> Thêm bánh
-              </button>
+              <BoxFiller products={products} capacity={box.capacity} rows={rows} onChange={setRows} />
 
               <div>
                 <div className="flex flex-wrap gap-3">
@@ -276,10 +153,8 @@ export function BoxDetailPage() {
                     {busy === "cart" ? "Đang lưu..." : savedLine ? "Đã có trong giỏ" : "Lưu vào giỏ hàng"}
                   </button>
                 </div>
-                {!complete && (
-                  <p className="mt-1.5 text-xs text-ink-muted">
-                    {remaining > 0 ? `Còn thiếu ${remaining} bánh để đủ hộp.` : "Hãy chọn đủ loại bánh và nhân bánh."}
-                  </p>
+                {!complete && remaining === 0 && (
+                  <p className="mt-1.5 text-xs text-ink-muted">Hãy chọn đủ loại bánh và nhân bánh.</p>
                 )}
               </div>
             </div>

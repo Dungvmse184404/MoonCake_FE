@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChipDrawer } from "@/components/catalog/ChipDrawer";
+import { BoxFiller, boxDetail, boxSelections, isBoxComplete, type BoxRow } from "@/components/catalog/BoxFiller";
+import { boxApi, type BoxItem } from "@/lib/boxApi";
 import { Link, useNavigate } from "react-router-dom";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormField";
@@ -19,6 +21,8 @@ interface Draft {
   quantity: number;
   categoryId: string;
   fillingId: string;
+  // Box lines only: the cakes picked for the box
+  rows: BoxRow[];
 }
 
 
@@ -32,12 +36,13 @@ export function CartPage() {
   );
 }
 
-// The cart is a saved list. Product lines are bought from here as direct product orders
-// (quantity, category and filling chosen now); box lines open the box page to pick their cakes.
+// The cart is a saved list. Lines are bought from here as direct orders: products get their quantity,
+// category and filling, boxes get their cakes (BoxFiller), all in one checkout.
 function CartContent() {
   const navigate = useNavigate();
   const { cart, loading, refresh, remove } = useCart();
   const [products, setProducts] = useState<Record<string, Product>>({});
+  const [boxes, setBoxes] = useState<Record<string, BoxItem>>({});
   const [stallNames, setStallNames] = useState<Record<string, string>>({});
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [error, setError] = useState("");
@@ -74,27 +79,48 @@ function CartContent() {
     };
   }, [lines, products]);
 
+  // Box lines need the box's allowed cakes to be filled here
+  useEffect(() => {
+    const missing = lines.filter(({ item }) => item.boxItemId && !boxes[item.boxItemId]);
+    if (!missing.length) return;
+    let cancelled = false;
+    Promise.all(missing.map(({ item }) => boxApi.get(item.boxItemId!).catch(() => null))).then((found) => {
+      if (cancelled) return;
+      setBoxes((current) => {
+        const next = { ...current };
+        for (const b of found) if (b) next[b.id] = b;
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [lines, boxes]);
+
   useEffect(() => {
     setDrafts((current) => {
       const next = { ...current };
       for (const { item } of lines) {
+        if (next[item.id]) continue;
         const product = item.productId ? products[item.productId] : undefined;
-        if (!product || next[item.id]) continue;
-        next[item.id] = {
-          selected: false,
-          quantity: 1,
-          categoryId: pickOnly(product.categories),
-          fillingId: pickOnly(product.fillings),
-        };
+        if (product) {
+          next[item.id] = { selected: false, quantity: 1, categoryId: pickOnly(product.categories), fillingId: pickOnly(product.fillings), rows: [] };
+        } else if (item.boxItemId && boxes[item.boxItemId]) {
+          next[item.id] = { selected: false, quantity: 1, categoryId: "", fillingId: "", rows: [] };
+        }
       }
       return next;
     });
-  }, [lines, products]);
+  }, [lines, products, boxes]);
 
   const patch = (id: string, change: Partial<Draft>) => setDrafts((d) => ({ ...d, [id]: { ...d[id], ...change } }));
 
-  const chosen = lines.filter(({ item }) => item.itemType === "Product" && drafts[item.id]?.selected);
-  const chosenTotal = chosen.reduce((sum, { item }) => sum + item.unitPrice * drafts[item.id].quantity, 0);
+  const chosen = lines.filter(({ item }) => drafts[item.id]?.selected);
+  const chosenTotal = chosen.reduce(
+    (sum, { item }) => sum + item.unitPrice * (item.itemType === "Product" ? drafts[item.id].quantity : 1),
+    0,
+  );
+  const activeCakes = (box?: BoxItem) => box?.products.filter((p) => p.status === "Active") ?? [];
 
   const onRemove = async (item: CartItem) => {
     setError("");
@@ -108,13 +134,35 @@ function CartContent() {
   const onContinue = () => {
     setError("");
     if (!chosen.length) return setError("Hãy chọn ít nhất một sản phẩm để đặt hàng.");
-    if (chosen.some(({ item }) => !drafts[item.id].categoryId || !drafts[item.id].fillingId)) {
+    const productLines = chosen.filter(({ item }) => item.itemType === "Product");
+    if (productLines.some(({ item }) => !drafts[item.id].categoryId || !drafts[item.id].fillingId)) {
       return setError("Hãy chọn loại bánh và nhân bánh cho các sản phẩm đã chọn.");
     }
+    const unfilled = chosen.find(
+      ({ item }) => item.itemType === "Box" && !isBoxComplete(drafts[item.id].rows, boxes[item.boxItemId!]?.capacity ?? 0),
+    );
+    if (unfilled) return setError(`Hộp "${unfilled.item.name}" cần đủ ${boxes[unfilled.item.boxItemId!]?.capacity} bánh, mỗi bánh chọn loại và nhân.`);
 
     saveCheckout(
       chosen.map(({ item, stallId, organizerId, brandName }) => {
         const draft = drafts[item.id];
+        if (item.itemType === "Box") {
+          const box = boxes[item.boxItemId!];
+          return {
+            key: item.id,
+            line: { itemType: "Box", boxItemId: box.id, stallId, selections: boxSelections(draft.rows) },
+            name: item.name,
+            imageUrl: item.imageUrl,
+            kind: "box",
+            detail: boxDetail(draft.rows, box.products),
+            unitPrice: item.unitPrice,
+            quantity: 1,
+            organizerId,
+            brandName,
+            stallId,
+            cartItemId: item.id,
+          };
+        }
         const product = products[item.productId!];
         const category = product?.categories.find((c) => c.id === draft.categoryId)?.name;
         const filling = product?.fillings.find((f) => f.id === draft.fillingId)?.name;
@@ -165,7 +213,9 @@ function CartContent() {
   return (
     <Container className="py-8">
       <h1 className="font-serif text-2xl font-black text-primary-dark">Giỏ hàng ({lines.length})</h1>
-      <p className="mt-1 text-sm text-ink-soft">Chọn sản phẩm, số lượng và nhân bánh rồi đặt hàng. Hộp combo cần chọn bánh trước khi mua.</p>
+      <p className="mt-1 text-sm text-ink-soft">
+        Chọn số lượng, loại bánh và nhân cho từng món. Hộp combo: chọn đủ bánh cho hộp. Mỗi cửa hàng / gian hàng sẽ thành một đơn riêng.
+      </p>
 
       <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
         <div className="space-y-4">
@@ -183,23 +233,23 @@ function CartContent() {
                   const draft = drafts[item.id];
                   const query = `?cartItem=${item.id}${group.stallId ? `&stallId=${group.stallId}` : ""}`;
                   const link = item.productId ? `/products/${item.productId}${query}` : `/boxes/${item.boxItemId}${query}`;
-                  const unorderable = product && (product.categories.length === 0 || product.fillings.length === 0);
-                  const soldOut = product && (product.status !== "Active" || product.stockQuantity <= 0);
+                  const box = item.boxItemId ? boxes[item.boxItemId] : undefined;
+                  const cakes = activeCakes(box);
+                  const unorderable =
+                    (product && (product.categories.length === 0 || product.fillings.length === 0)) || (box && cakes.length === 0);
+                  const soldOut =
+                    (product && (product.status !== "Active" || product.stockQuantity <= 0)) || (box && box.status !== "Active");
 
                   return (
                     <li key={item.id} className="flex gap-3 p-4">
-                      {item.itemType === "Product" ? (
-                        <input
-                          type="checkbox"
-                          checked={draft?.selected ?? false}
-                          disabled={!draft || Boolean(unorderable) || Boolean(soldOut)}
-                          onChange={(e) => patch(item.id, { selected: e.target.checked })}
-                          aria-label={`Chọn ${item.name}`}
-                          className="mt-1 size-4 shrink-0 accent-[var(--color-primary)] disabled:opacity-40"
-                        />
-                      ) : (
-                        <span className="size-4 shrink-0" />
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={draft?.selected ?? false}
+                        disabled={!draft || Boolean(unorderable) || Boolean(soldOut)}
+                        onChange={(e) => patch(item.id, { selected: e.target.checked })}
+                        aria-label={`Chọn ${item.name}`}
+                        className="mt-1 size-4 shrink-0 accent-[var(--color-primary)] disabled:opacity-40"
+                      />
                       <Link to={link} className="shrink-0">
                         <CakeImage
                           src={item.imageUrl}
@@ -224,13 +274,27 @@ function CartContent() {
                         </div>
                         <p className="text-sm font-bold text-primary">{formatVnd(item.unitPrice)}</p>
 
-                        {item.itemType === "Box" && (
-                          <Link
-                            to={link}
-                            className="mt-2 inline-block rounded-lg border border-primary px-3 py-1.5 text-sm font-semibold text-primary hover:bg-primary-soft"
-                          >
-                            Chọn bánh và mua
-                          </Link>
+                        {item.itemType === "Box" && box && (
+                          <p className="text-xs text-ink-muted">Hộp {box.capacity} bánh</p>
+                        )}
+                        {item.itemType === "Box" && soldOut && (
+                          <p className="mt-1 text-xs font-semibold text-primary-dark">Hộp đã ngừng bán.</p>
+                        )}
+                        {item.itemType === "Box" && !soldOut && unorderable && (
+                          <p className="mt-1 text-xs text-ink-muted">Hộp chưa có bánh để chọn.</p>
+                        )}
+                        {item.itemType === "Box" && box && draft && !soldOut && !unorderable && !draft.selected && (
+                          <p className="mt-1 text-xs text-ink-muted">Tích chọn để chọn bánh và nhân cho hộp.</p>
+                        )}
+                        {item.itemType === "Box" && box && draft?.selected && (
+                          <div className="mt-3">
+                            <BoxFiller
+                              products={cakes}
+                              capacity={box.capacity}
+                              rows={draft.rows}
+                              onChange={(rows) => patch(item.id, { rows })}
+                            />
+                          </div>
                         )}
 
                         {item.itemType === "Product" && soldOut && (
@@ -287,7 +351,7 @@ function CartContent() {
         <aside className="space-y-3 rounded-xl border border-line bg-white p-5 lg:sticky lg:top-36">
           <h2 className="font-semibold text-ink">Đặt hàng</h2>
           <div className="flex justify-between text-sm text-ink-soft">
-            <span>Đã chọn {chosen.length} sản phẩm</span>
+            <span>Đã chọn {chosen.length} món</span>
             <span className="font-semibold text-ink">{formatVnd(chosenTotal)}</span>
           </div>
           {error && <FormAlert type="error">{error}</FormAlert>}
