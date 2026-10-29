@@ -36,23 +36,28 @@ export function OrdersPage({ mode }: { mode: OrderMode }) {
         {mode === "buyer" ? "Theo dõi đơn đã đặt, hủy đơn chờ xác nhận và đánh giá sản phẩm đã nhận." : "Xác nhận, giao và hoàn tất các đơn của khách."}
       </p>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value as OrderStatus | "");
-            setPage(1);
-          }}
-          aria-label="Lọc theo trạng thái"
-          className="rounded-lg border border-line bg-white px-3 py-1.5 outline-none focus:border-primary"
-        >
-          <option value="">Mọi trạng thái</option>
-          {(Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {ORDER_STATUS_LABEL[s]}
-            </option>
-          ))}
-        </select>
+      <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="Lọc theo trạng thái">
+        {(["", ...Object.keys(ORDER_STATUS_LABEL)] as Array<OrderStatus | "">).map((s) => (
+          <button
+            key={s || "all"}
+            type="button"
+            aria-pressed={status === s}
+            onClick={() => {
+              setStatus(s);
+              setPage(1);
+            }}
+            className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+              status === s
+                ? "border-primary bg-primary text-white"
+                : "border-line bg-white text-ink-soft hover:border-primary hover:text-primary"
+            }`}
+          >
+            {s ? ORDER_STATUS_LABEL[s] : "Tất cả"}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
         <SearchInput
           value={query}
           onSearch={(q) => {

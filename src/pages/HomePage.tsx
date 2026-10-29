@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Moon } from "lucide-react";
 import { AmbientBackground } from "@/components/ambient/AmbientBackground";
+import { BoxCard } from "@/components/catalog/BoxCard";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { AboutSection } from "@/components/home/AboutSection";
 import { FeatureTiles } from "@/components/home/FeatureTiles";
@@ -9,6 +10,7 @@ import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { PartnerSection } from "@/components/home/PartnerSection";
 import { Container } from "@/components/layout/Container";
 import { StallCard } from "@/components/stalls/StallCard";
+import { boxApi } from "@/lib/boxApi";
 import { catalogApi } from "@/lib/catalog";
 import { organizerApi } from "@/lib/organizerApi";
 import { useAsync } from "@/lib/useAsync";
@@ -32,6 +34,7 @@ export function HomePage() {
   const { data: categories } = useAsync(() => catalogApi.listCategories(), []);
   const { data: featuredProducts } = useAsync(() => catalogApi.listFeaturedProducts(4), []);
   const { data: stalls } = useAsync(() => organizerApi.listStalls({ pageSize: 4 }), []);
+  const { data: boxes } = useAsync(() => boxApi.list({ pageSize: 4 }), []);
 
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" });
@@ -59,6 +62,18 @@ export function HomePage() {
                   </span>
                   {c.name}
                 </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!!boxes?.items.length && (
+          <section aria-labelledby="boxes-title">
+            <SectionHeader id="boxes-title" title="Hộp combo tự chọn" to="/cake-sets" />
+            <p className="mt-1 text-sm text-ink-soft">Chọn hộp, rồi tự chọn bánh và nhân để lấp đầy khi đặt hàng.</p>
+            <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              {boxes.items.map((b) => (
+                <BoxCard key={b.id} box={b} />
               ))}
             </div>
           </section>
